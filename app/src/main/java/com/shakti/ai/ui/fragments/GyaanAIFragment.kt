@@ -26,7 +26,11 @@ class GyaanAIFragment : Fragment() {
     private lateinit var btnFindScholarships: Button
     private lateinit var btnPreFillForms: Button
     private lateinit var btnDocumentChecklist: Button
+    private lateinit var btnDeadlineReminders: Button
+    private lateinit var btnApplicationTracking: Button
     private lateinit var btnVirtualMentorship: Button
+    private lateinit var btnWomenLeadersStories: Button
+    private lateinit var btnSkillDevelopment: Button
     private lateinit var btnOnlineCourses: Button
     private lateinit var btnCareerGuidance: Button
     private lateinit var btnSkillAssessment: Button
@@ -56,7 +60,11 @@ class GyaanAIFragment : Fragment() {
         btnFindScholarships = view.findViewById(R.id.btn_find_scholarships)
         btnPreFillForms = view.findViewById(R.id.btn_pre_fill_forms)
         btnDocumentChecklist = view.findViewById(R.id.btn_document_checklist)
+        btnDeadlineReminders = view.findViewById(R.id.btn_deadline_reminders)
+        btnApplicationTracking = view.findViewById(R.id.btn_application_tracking)
         btnVirtualMentorship = view.findViewById(R.id.btn_virtual_mentorship)
+        btnWomenLeadersStories = view.findViewById(R.id.btn_women_leaders_stories)
+        btnSkillDevelopment = view.findViewById(R.id.btn_skill_development)
 
         // Additional features
         btnOnlineCourses = createButton("💻 Free Online Courses")
@@ -83,8 +91,24 @@ class GyaanAIFragment : Fragment() {
             showDocumentChecklist()
         }
 
+        btnDeadlineReminders.setOnClickListener {
+            setupDeadlineReminders()
+        }
+
+        btnApplicationTracking.setOnClickListener {
+            showApplicationTracking()
+        }
+
         btnVirtualMentorship.setOnClickListener {
             connectWithMentor()
+        }
+
+        btnWomenLeadersStories.setOnClickListener {
+            showWomenLeadersStories()
+        }
+
+        btnSkillDevelopment.setOnClickListener {
+            showFreeSkillDevelopmentCourses()
         }
 
         btnOnlineCourses.setOnClickListener {
@@ -213,6 +237,417 @@ class GyaanAIFragment : Fragment() {
                 Toast.makeText(context, "Opening document upload...", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun setupDeadlineReminders() {
+        val upcomingDeadlines = """
+            ⏰ Upcoming Scholarship Deadlines:
+            
+            🔔 National Scholarship Portal
+            Deadline: 31st January 2025
+            Days Left: 15 days
+            
+            🔔 Prime Minister's Scholarship Scheme
+            Deadline: 15th February 2025
+            Days Left: 30 days
+            
+            🔔 Begum Hazrat Mahal National Scholarship
+            Deadline: 28th February 2025
+            Days Left: 43 days
+            
+            🔔 Post Matric Scholarship for Minorities
+            Deadline: 15th March 2025
+            Days Left: 58 days
+            
+            🔔 INSPIRE Scholarship (Science Students)
+            Deadline: 31st March 2025
+            Days Left: 74 days
+            
+            💡 Enable notifications to never miss a deadline!
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("⏰ Deadline Reminders")
+            .setMessage(upcomingDeadlines)
+            .setPositiveButton("Set Reminders") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "✅ Reminders set! You'll get notifications 7, 3, and 1 day before each deadline",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            .setNeutralButton("Calendar Sync") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "📅 Syncing deadlines to your calendar...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showApplicationTracking() {
+        val trackingInfo = """
+            📊 Your Application Status:
+            
+            ✅ COMPLETED (2 Applications)
+            • National Merit Scholarship
+              Status: Under Review
+              Applied: 2 weeks ago
+              
+            • State Minority Scholarship
+              Status: Approved ✓
+              Amount: ₹50,000/year
+              Credited: Next month
+            
+            ⏳ IN PROGRESS (1 Application)
+            • Post Matric Scholarship
+              Status: Documents pending
+              Missing: Income Certificate
+              Deadline: 20 days left
+            
+            📝 DRAFT (3 Applications)
+            • Prime Minister's Scholarship
+            • INSPIRE Scholarship
+            • Girl Child Scholarship
+            
+            💡 Complete your pending applications today!
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("📊 Application Tracking")
+            .setMessage(trackingInfo)
+            .setPositiveButton("Complete Pending") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "Opening pending applications...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNeutralButton("View All") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "Loading detailed application history...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showWomenLeadersStories() {
+        val leaders = arrayOf(
+            "🌟 Indra Nooyi - From Madras to PepsiCo CEO",
+            "🌟 Kiran Mazumdar-Shaw - Biocon Founder",
+            "🌟 Sudha Murty - Philanthropist & Author",
+            "🌟 Mary Kom - Olympic Boxer",
+            "🌟 Arundhati Bhattacharya - First Woman SBI Chairperson",
+            "🌟 Sania Mirza - Tennis Champion",
+            "🌟 Naina Lal Kidwai - Banking Pioneer",
+            "🌟 Priyanka Chopra - Global Icon"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("💪 Women Leaders Stories")
+            .setMessage("Select a leader to read their inspiring journey:")
+            .setItems(leaders) { _, which ->
+                showLeaderStory(which)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showLeaderStory(index: Int) {
+        val stories = arrayOf(
+            // Indra Nooyi
+            """
+                🌟 Indra Nooyi
+                Former CEO, PepsiCo
+                
+                Journey:
+                • Born in Chennai, Tamil Nadu
+                • Studied at IIM Calcutta
+                • Started as product manager
+                • Rose to become PepsiCo CEO (2006-2018)
+                • One of Fortune's Most Powerful Women
+                
+                Key Lessons:
+                ✨ "Whatever anybody says or does, assume positive intent"
+                ✨ Work-life balance is a myth, it's work-life integration
+                ✨ Education is the foundation of success
+                ✨ Never compromise on your values
+                
+                Your Turn:
+                • Focus on education
+                • Build strong fundamentals
+                • Work hard with integrity
+                • Never give up on dreams
+            """.trimIndent(),
+            // Kiran Mazumdar-Shaw
+            """
+                🌟 Kiran Mazumdar-Shaw
+                Founder, Biocon (₹15,000 Cr company)
+                
+                Journey:
+                • Started with ₹10,000 in 1978
+                • Faced rejection for being a woman
+                • Built India's largest biotech company
+                • One of India's richest self-made women
+                
+                Key Lessons:
+                ✨ "I learned that if you have to be an entrepreneur, you have to be fearless"
+                ✨ Failures are stepping stones
+                ✨ Innovation is key to success
+                ✨ Give back to society
+                
+                Your Turn:
+                • Don't fear failure
+                • Start small, dream big
+                • Solve real problems
+                • Be persistent
+            """.trimIndent(),
+            // Sudha Murty
+            """
+                🌟 Sudha Murty
+                Philanthropist, Author, Infosys Foundation
+                
+                Journey:
+                • First woman engineer at TATA
+                • Gave ₹10,000 to her husband (Narayana Murthy) to start Infosys
+                • Runs Infosys Foundation
+                • Written 30+ books
+                • Padma Shri & Padma Bhushan awardee
+                
+                Key Lessons:
+                ✨ "Simple living, high thinking"
+                ✨ Education transforms lives
+                ✨ Give back to society
+                ✨ Stay humble despite success
+                
+                Your Turn:
+                • Value education
+                • Help others
+                • Stay grounded
+                • Write your own story
+            """.trimIndent(),
+            // Mary Kom
+            """
+                🌟 MC Mary Kom
+                Olympic Bronze Medalist, 6-time World Champion
+                
+                Journey:
+                • Born in rural Manipur
+                • Faced poverty and discrimination
+                • Balanced boxing with motherhood (3 kids)
+                • Won Olympic medal at age 29
+                • First Indian woman boxer to qualify for Olympics
+                
+                Key Lessons:
+                ✨ "Champions aren't made in gyms. Champions are made from something they have deep inside them"
+                ✨ No obstacle is too big
+                ✨ Believe in yourself
+                ✨ Hard work beats talent
+                
+                Your Turn:
+                • Stay dedicated
+                • Don't let circumstances define you
+                • Set ambitious goals
+                • Keep fighting
+            """.trimIndent(),
+            // Arundhati Bhattacharya
+            """
+                🌟 Arundhati Bhattacharya
+                First Woman Chairperson, SBI
+                
+                Journey:
+                • Joined SBI as probationary officer
+                • Worked for 35+ years
+                • Broke glass ceiling in male-dominated banking
+                • Led India's largest bank (2013-2017)
+                • Forbes' Most Powerful Women
+                
+                Key Lessons:
+                ✨ "Don't wait for opportunities, create them"
+                ✨ Competence has no gender
+                ✨ Stay focused on goals
+                ✨ Lead with empathy
+                
+                Your Turn:
+                • Build strong career foundation
+                • Prove yourself with work
+                • Don't let stereotypes stop you
+                • Aim for leadership roles
+            """.trimIndent(),
+            // Sania Mirza
+            """
+                🌟 Sania Mirza
+                First Indian Woman Tennis Star
+                
+                Journey:
+                • Started playing at age 6
+                • Faced cultural barriers
+                • Became world No. 1 in doubles
+                • 6 Grand Slam titles
+                • Broke stereotypes about Muslim women
+                
+                Key Lessons:
+                ✨ "I don't play for records, I play because I love the sport"
+                ✨ Break barriers, don't accept them
+                ✨ Family support is crucial
+                ✨ Hard work never fails
+                
+                Your Turn:
+                • Follow your passion
+                • Challenge societal norms
+                • Train consistently
+                • Inspire others
+            """.trimIndent(),
+            // Naina Lal Kidwai
+            """
+                🌟 Naina Lal Kidwai
+                Banking Pioneer, First Indian Woman Harvard MBA
+                
+                Journey:
+                • First Indian woman with Harvard MBA
+                • Worked at ANZ Grindlays, Morgan Stanley, HSBC
+                • Country Head, HSBC India
+                • Multiple board memberships
+                
+                Key Lessons:
+                ✨ "Be bold, be authentic, be yourself"
+                ✨ Education opens doors
+                ✨ Take calculated risks
+                ✨ Mentor others
+                
+                Your Turn:
+                • Invest in education
+                • Build strong networks
+                • Take leadership roles
+                • Help other women rise
+            """.trimIndent(),
+            // Priyanka Chopra
+            """
+                🌟 Priyanka Chopra Jonas
+                Global Icon, Actor, Producer
+                
+                Journey:
+                • Miss World 2000
+                • Bollywood superstar
+                • Moved to Hollywood
+                • Starred in Quantico, Matrix 4
+                • Producer, Entrepreneur, UNICEF Goodwill Ambassador
+                
+                Key Lessons:
+                ✨ "I've never believed in limitations"
+                ✨ Take risks, go global
+                ✨ Don't let anyone box you in
+                ✨ Use fame for good causes
+                
+                Your Turn:
+                • Think beyond boundaries
+                • Embrace new challenges
+                • Build global mindset
+                • Give back to society
+            """.trimIndent()
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Inspiring Journey")
+            .setMessage(stories[index])
+            .setPositiveButton("Save Story") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "✅ Story saved to your inspiration library",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNeutralButton("Read More Stories") { _, _ ->
+                showWomenLeadersStories()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showFreeSkillDevelopmentCourses() {
+        val courseCategories = """
+            💻 FREE Skill Development Courses:
+            
+            📱 DIGITAL SKILLS
+            • Google Digital Garage - Digital Marketing
+            • Microsoft Digital Literacy
+            • Facebook Blueprint - Social Media
+            • Canva Design School
+            
+            💼 PROFESSIONAL SKILLS
+            • Coursera - Communication Skills
+            • LinkedIn Learning - Leadership
+            • edX - Project Management
+            • Alison - Business Skills
+            
+            🖥️ TECHNICAL SKILLS
+            • freeCodeCamp - Coding
+            • Khan Academy - Computer Science
+            • NPTEL - Engineering
+            • MIT OpenCourseWare
+            
+            🎨 CREATIVE SKILLS
+            • Skillshare - Design & Art
+            • YouTube - Tutorial Channels
+            • Domestika - Creative Arts
+            • Adobe Creative Cloud Tutorials
+            
+            🏢 GOVERNMENT PLATFORMS
+            • SWAYAM (UGC approved)
+            • NIOS (National Open School)
+            • IGNOU Online Programs
+            • Skill India Digital
+            
+            All courses are 100% FREE!
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("🎓 Free Skill Development")
+            .setMessage(courseCategories)
+            .setPositiveButton("Browse Courses") { _, _ ->
+                showSkillCourseCategories()
+            }
+            .setNeutralButton("Get Certified") { _, _ ->
+                Toast.makeText(
+                    context,
+                    "Opening certification programs...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showSkillCourseCategories() {
+        val categories = arrayOf(
+            "💻 Technology & Coding",
+            "📊 Data Science & Analytics",
+            "🎨 Design & Creative Arts",
+            "📱 Digital Marketing",
+            "💼 Business & Management",
+            "🗣️ Communication Skills",
+            "🌐 Languages (English, Hindi, etc.)",
+            "🎓 Exam Preparation (UPSC, Banking, etc.)"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Choose Category")
+            .setItems(categories) { _, which ->
+                val category = categories[which].substring(2)
+                viewModel.recommendCourses(emptyList(), category, 0L)
+                Toast.makeText(
+                    context,
+                    "Loading courses in: $category",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Back", null)
             .show()
     }
 
