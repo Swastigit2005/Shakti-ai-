@@ -7,6 +7,9 @@ designed to address specific challenges faced by women in India.
 > **Update**: The project now uses **Traditional Android Views** (XML layouts with Fragments)
 > instead of Jetpack Compose for better compatibility and stability.
 
+> **Build Fix (Latest)**: The RunAnywhere SDK AAR files have been removed to fix build errors.
+> The app now uses Gemini AI as the primary AI service. See `BUILD_FIX_GUIDE.md` for details.
+
 ## 🌟 Features
 
 ### 1. **Sathi AI** - Emotional Support
@@ -339,6 +342,7 @@ In case of emergency, always contact local emergency services.
 - `PROJECT_STRUCTURE.md` - Detailed architecture guide
 - `MIGRATION_TO_TRADITIONAL_VIEW.md` - Migration guide and remaining tasks
 - `app/src/main/ml/README.md` - ML models documentation
+- `BUILD_FIX_GUIDE.md` - Build fix guide
 
 ---
 

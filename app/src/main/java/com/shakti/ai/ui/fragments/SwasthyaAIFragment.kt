@@ -9,7 +9,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
 import com.shakti.ai.models.HealthCategory
@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 
 class SwasthyaAIFragment : Fragment() {
 
-    private val viewModel: SwasthyaViewModel by viewModels()
+    private val viewModel: SwasthyaViewModel by activityViewModels()
 
     // UI Elements
     private lateinit var btnHeavyBleeding: Button

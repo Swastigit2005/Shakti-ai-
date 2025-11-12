@@ -108,21 +108,10 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // ============ RUNANYWHERE SDK ============
-    // RunAnywhere SDK - Core (v0.1.3-alpha) - Local AAR
-    implementation(files("libs/RunAnywhereKotlinSDK-release.aar"))
-
-    // RunAnywhere SDK - LLM Module (includes llama.cpp with 7 ARM64 CPU variants) - Local AAR
-    implementation(files("libs/runanywhere-llm-llamacpp-release.aar"))
-
-    // Required dependencies for RunAnywhere SDK
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-    implementation("io.ktor:ktor-client-core:2.3.7")
-    implementation("io.ktor:ktor-client-okhttp:2.3.7")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-    implementation("com.squareup.okio:okio:3.7.0")
+    // Note: RunAnywhere SDK dependencies removed - AAR files not available
+    // To add them back: Download from GitHub releases and place in app/libs/
+    // - RunAnywhereKotlinSDK-release.aar
+    // - runanywhere-llm-llamacpp-release.aar
 
     // ============ GEMINI API (Fallback) ============
     // Latest Gemini SDK for Android
@@ -163,6 +152,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.5")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.5")
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
 
     // ============ AUDIO PROCESSING ============
     implementation("androidx.media:media:1.6.0")

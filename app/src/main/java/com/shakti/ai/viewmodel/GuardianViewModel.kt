@@ -33,7 +33,12 @@ import java.io.File
  */
 class GuardianViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val guardianAI = GuardianAI.getInstance(application)
+    private val guardianAI = try {
+        GuardianAI.getInstance(application)
+    } catch (e: Exception) {
+        android.util.Log.w("GuardianViewModel", "GuardianAI initialization failed: ${e.message}")
+        null
+    }
     private val aptosService = AptosService.getInstance(application)
     private val cameraManager =
         application.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -86,18 +91,27 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
      */
     fun startGuardianMonitoring() {
         viewModelScope.launch {
-            val started = guardianAI.startAudioMonitoring()
+            try {
+                val started = guardianAI?.startAudioMonitoring() ?: false
 
-            if (started) {
-                _isMonitoring.value = true
+                if (started) {
+                    _isMonitoring.value = true
 
-                // Start continuous monitoring loop
-                monitorThreats()
+                    // Start continuous monitoring loop
+                    monitorThreats()
 
-                // Start audio visualization
-                updateAudioLevel()
-            } else {
-                // Permission not granted
+                    // Start audio visualization
+                    updateAudioLevel()
+                } else {
+                    // Permission not granted or AI not available
+                    _isMonitoring.value = false
+                    android.util.Log.w(
+                        "GuardianViewModel",
+                        "Could not start monitoring - check permissions or model availability"
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("GuardianViewModel", "Error starting monitoring: ${e.message}")
                 _isMonitoring.value = false
             }
         }
@@ -110,7 +124,12 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             while (_isMonitoring.value) {
                 try {
-                    val result = guardianAI.analyzeAudioForThreats()
+                    val result =
+                        guardianAI?.analyzeAudioForThreats() ?: GuardianAI.ThreatDetectionResult(
+                            isThreat = false,
+                            threatType = GuardianAI.ThreatType.NONE,
+                            confidence = 0f
+                        )
 
                     _threatLevel.value = result.confidence
                     _latestThreat.value = result
@@ -123,7 +142,12 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
                     // Check every 100ms for real-time detection
                     delay(100)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e(
+                        "GuardianViewModel",
+                        "Error in threat monitoring: ${e.message}"
+                    )
+                    // Continue monitoring even if one iteration fails
+                    delay(1000)
                 }
             }
         }
@@ -136,11 +160,15 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             while (_isMonitoring.value) {
                 try {
-                    val level = guardianAI.getCurrentAudioLevel()
+                    val level = guardianAI?.getCurrentAudioLevel() ?: 0f
                     _audioLevel.value = level
                     delay(50) // Update 20 times per second
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e(
+                        "GuardianViewModel",
+                        "Error getting audio level: ${e.message}"
+                    )
+                    delay(100)
                 }
             }
         }
@@ -455,7 +483,11 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
      */
     fun stopGuardianMonitoring() {
         _isMonitoring.value = false
-        guardianAI.stopAudioMonitoring()
+        try {
+            guardianAI?.stopAudioMonitoring()
+        } catch (e: Exception) {
+            android.util.Log.e("GuardianViewModel", "Error stopping monitoring: ${e.message}")
+        }
         _threatDetected.value = false
         _emergencyActivated.value = false
 
@@ -501,6 +533,10 @@ class GuardianViewModel(application: Application) : AndroidViewModel(application
     override fun onCleared() {
         super.onCleared()
         stopGuardianMonitoring()
-        guardianAI.cleanup()
+        try {
+            guardianAI?.cleanup()
+        } catch (e: Exception) {
+            android.util.Log.e("GuardianViewModel", "Error during cleanup: ${e.message}")
+        }
     }
 }

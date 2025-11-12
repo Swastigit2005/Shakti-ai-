@@ -93,7 +93,15 @@ class GuardianAI(private val context: Context) {
     )
 
     init {
-        loadModel()
+        try {
+            loadModel()
+        } catch (e: Exception) {
+            // Model not found - app will work with fallback keyword detection only
+            android.util.Log.w(
+                "GuardianAI",
+                "TensorFlow model not available, using keyword detection only: ${e.message}"
+            )
+        }
     }
 
     /**
@@ -107,9 +115,11 @@ class GuardianAI(private val context: Context) {
                 setUseNNAPI(true) // Use Android Neural Networks API if available
             }
             interpreter = Interpreter(modelBuffer, options)
+            android.util.Log.i("GuardianAI", "TensorFlow model loaded successfully")
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("GuardianAI", "Could not load TensorFlow model: ${e.message}")
             // Fallback: Use keyword detection only
+            interpreter = null
         }
     }
 
@@ -117,20 +127,20 @@ class GuardianAI(private val context: Context) {
      * Load model file from assets
      */
     private fun loadModelFile(): MappedByteBuffer {
-        return try {
+        try {
             val assetFileDescriptor = context.assets.openFd(MODEL_FILE)
             val inputStream = FileInputStream(assetFileDescriptor.fileDescriptor)
             val fileChannel = inputStream.channel
             val startOffset = assetFileDescriptor.startOffset
             val declaredLength = assetFileDescriptor.declaredLength
-            fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+            return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
         } catch (e: Exception) {
-            // If model file not found, create a dummy buffer
-            // In production, download model from server
-            throw IllegalStateException(
-                "Guardian AI model not found. Please add guardian_audio.tflite to assets/",
-                e
+            // If model file not found, log warning and continue without it
+            android.util.Log.w(
+                "GuardianAI",
+                "guardian_audio.tflite not found in assets, using fallback mode"
             )
+            throw e // Will be caught in loadModel()
         }
     }
 
@@ -185,7 +195,12 @@ class GuardianAI(private val context: Context) {
         val buffer = ShortArray(BUFFER_SIZE)
 
         try {
-            val bytesRead = audioRecorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
+            val recorder = audioRecorder
+            if (recorder == null) {
+                return@withContext ThreatDetectionResult(false, ThreatType.NONE, 0f)
+            }
+
+            val bytesRead = recorder.read(buffer, 0, BUFFER_SIZE)
 
             if (bytesRead > 0) {
                 // 1. Calculate audio features
@@ -201,14 +216,19 @@ class GuardianAI(private val context: Context) {
                     )
                 }
 
-                // 3. Run TensorFlow Lite inference
-                val modelResult = runInference(features)
+                // 3. Run TensorFlow Lite inference (only if model is loaded)
+                val modelResult = if (interpreter != null) {
+                    runInference(features)
+                } else {
+                    // No model available - return default
+                    FloatArray(5) { 0f }
+                }
 
                 // 4. Interpret results
                 return@withContext interpretResults(modelResult)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("GuardianAI", "Error analyzing audio: ${e.message}")
         }
 
         return@withContext ThreatDetectionResult(false, ThreatType.NONE, 0f)
@@ -354,11 +374,20 @@ class GuardianAI(private val context: Context) {
             return@withContext 0f
         }
 
-        val buffer = ShortArray(BUFFER_SIZE)
-        val bytesRead = audioRecorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
+        try {
+            val recorder = audioRecorder
+            if (recorder == null) {
+                return@withContext 0f
+            }
 
-        if (bytesRead > 0) {
-            return@withContext calculateVolume(buffer, bytesRead)
+            val buffer = ShortArray(BUFFER_SIZE)
+            val bytesRead = recorder.read(buffer, 0, BUFFER_SIZE)
+
+            if (bytesRead > 0) {
+                return@withContext calculateVolume(buffer, bytesRead)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GuardianAI", "Error getting audio level: ${e.message}")
         }
 
         return@withContext 0f

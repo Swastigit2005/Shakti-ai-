@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
 import com.shakti.ai.viewmodel.SangamViewModel
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 class SangamAIFragment : Fragment() {
 
-    private val viewModel: SangamViewModel by viewModels()
+    private val viewModel: SangamViewModel by activityViewModels()
 
     private lateinit var btnCareerGuidance: Button
     private lateinit var btnBusinessAdvice: Button

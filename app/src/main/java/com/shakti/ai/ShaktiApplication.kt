@@ -22,9 +22,10 @@ class ShaktiApplication : Application() {
         applicationScope.launch(Dispatchers.IO) {
             try {
                 initializeRunAnywhereSDK()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize RunAnywhere SDK: ${e.message}", e)
-                // App continues to work even if SDK initialization fails
+            } catch (e: Throwable) {
+                // Catch all exceptions including NoClassDefFoundError
+                Log.w(TAG, "RunAnywhere SDK initialization skipped: ${e.message}")
+                // App continues to work even if SDK initialization fails - using Gemini API fallback
             }
         }
     }
@@ -72,10 +73,12 @@ class ShaktiApplication : Application() {
 
             } catch (e: ClassNotFoundException) {
                 Log.w(TAG, "RunAnywhere SDK not found - using fallback Gemini API only", e)
+            } catch (e: NoClassDefFoundError) {
+                Log.w(TAG, "RunAnywhere SDK classes missing - using fallback Gemini API only", e)
             }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "SDK initialization failed: ${e.message}", e)
+        } catch (e: Throwable) {
+            Log.w(TAG, "SDK initialization failed - using fallback Gemini API only: ${e.message}")
         }
     }
 

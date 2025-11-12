@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
 import com.shakti.ai.models.DocumentType
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class NyayaAIFragment : Fragment() {
 
-    private val viewModel: NyayaViewModel by viewModels()
+    private val viewModel: NyayaViewModel by activityViewModels()
 
     // UI Elements
     private lateinit var incidentTypeSpinner: Spinner

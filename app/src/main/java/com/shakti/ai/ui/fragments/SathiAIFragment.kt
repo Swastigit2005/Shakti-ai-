@@ -18,10 +18,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import com.shakti.ai.R
 import com.shakti.ai.viewmodel.SathiViewModel
 import kotlinx.coroutines.launch
@@ -30,13 +35,73 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * SathiAIFragment - Mental Health Support Module
- * Interactive implementation with Gemini AI integration via ViewModel
+ * SathiAIFragment - Mental Health Support Module with Three Tabs
+ * 1. AI Companion
+ * 2. Mental Health Dashboard
+ * 3. Support Resources
  */
 class SathiAIFragment : Fragment() {
 
+    private val viewModel: SathiViewModel by activityViewModels()
+    private lateinit var tabLayout: TabLayout
+    private lateinit var viewPager: ViewPager2
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_sathi_ai, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Initialize TabLayout and ViewPager2
+        tabLayout = view.findViewById(R.id.tab_layout)
+        viewPager = view.findViewById(R.id.view_pager)
+
+        // Setup ViewPager with tabs
+        setupViewPager()
+    }
+
+    private fun setupViewPager() {
+        val adapter = SathiPagerAdapter(this)
+        viewPager.adapter = adapter
+
+        // Connect TabLayout with ViewPager2
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> "💬 AI Companion"
+                1 -> "📊 Dashboard"
+                2 -> "🆘 Resources"
+                else -> ""
+            }
+        }.attach()
+    }
+
+    // ViewPager2 Adapter for the three tabs
+    private inner class SathiPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
+        override fun getItemCount(): Int = 3
+
+        override fun createFragment(position: Int): Fragment {
+            return when (position) {
+                0 -> SathiChatFragment()
+                1 -> MentalHealthDashboardFragment()
+                2 -> SupportResourcesFragment()
+                else -> SathiChatFragment()
+            }
+        }
+    }
+}
+
+/**
+ * Tab 1: AI Companion Chat Interface
+ */
+class SathiChatFragment : Fragment() {
+
     // Use ViewModel for Gemini API integration
-    private val viewModel: SathiViewModel by viewModels()
+    private val viewModel: SathiViewModel by activityViewModels()
 
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -47,14 +112,7 @@ class SathiAIFragment : Fragment() {
     private lateinit var uploadButton: Button
     private lateinit var breathingButton: Button
     private lateinit var gratitudeButton: Button
-    private lateinit var supportGroupButton: Button
-    private lateinit var emergencyButton: Button
     private lateinit var chatRecyclerView: RecyclerView
-    private lateinit var moodScore: TextView
-    private lateinit var anxietyScore: TextView
-    private lateinit var conversationCount: TextView
-    private lateinit var moodProgress: ProgressBar
-    private lateinit var anxietyProgress: ProgressBar
 
     // Media recording
     private var mediaRecorder: MediaRecorder? = null
@@ -94,7 +152,7 @@ class SathiAIFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_sathi_ai, container, false)
+        return inflater.inflate(R.layout.fragment_sathi_chat, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -105,7 +163,6 @@ class SathiAIFragment : Fragment() {
         initializeViews(view)
         setupClickListeners()
         setupRecyclerView()
-        loadSavedData()
         observeViewModel()
 
         // Initialize Sathi AI session via ViewModel
@@ -121,14 +178,7 @@ class SathiAIFragment : Fragment() {
         uploadButton = view.findViewById(R.id.btn_upload_media)
         breathingButton = view.findViewById(R.id.btn_breathing_exercise)
         gratitudeButton = view.findViewById(R.id.btn_gratitude_journal)
-        supportGroupButton = view.findViewById(R.id.btn_support_group)
-        emergencyButton = view.findViewById(R.id.btn_emergency_helpline)
         chatRecyclerView = view.findViewById(R.id.chat_recycler_view)
-        moodScore = view.findViewById(R.id.mood_score)
-        anxietyScore = view.findViewById(R.id.anxiety_score)
-        conversationCount = view.findViewById(R.id.conversation_count)
-        moodProgress = view.findViewById(R.id.mood_progress)
-        anxietyProgress = view.findViewById(R.id.anxiety_progress)
     }
 
     private fun setupClickListeners() {
@@ -151,14 +201,6 @@ class SathiAIFragment : Fragment() {
         gratitudeButton.setOnClickListener {
             openGratitudeJournal()
         }
-
-        supportGroupButton.setOnClickListener {
-            joinSupportGroup()
-        }
-
-        emergencyButton.setOnClickListener {
-            showEmergencyContacts()
-        }
     }
 
     private fun setupRecyclerView() {
@@ -166,7 +208,6 @@ class SathiAIFragment : Fragment() {
         chatRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = chatAdapter
-            // Ensure recycler view doesn't interfere with parent scrolling
             isNestedScrollingEnabled = true
         }
     }
@@ -195,21 +236,6 @@ class SathiAIFragment : Fragment() {
             }
         }
 
-        // Observe mood score
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.moodScore.collect { score ->
-                val mood = (score * 10).coerceIn(0, 100)
-                moodProgress.progress = mood
-                moodScore.text = "$mood%"
-
-                val anxiety = 100 - mood
-                anxietyProgress.progress = anxiety
-                anxietyScore.text = "$anxiety%"
-
-                saveData()
-            }
-        }
-
         // Observe loading state
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collect { isLoading ->
@@ -230,12 +256,9 @@ class SathiAIFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isCrisisDetected.collect { isCrisis ->
                 if (isCrisis) {
-                    emergencyButton.setBackgroundColor(
-                        resources.getColor(android.R.color.holo_red_light, null)
-                    )
                     Toast.makeText(
                         context,
-                        "⚠️ Crisis detected. Emergency resources available.",
+                        "⚠️ Crisis detected. Emergency resources available in Support tab.",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -243,40 +266,12 @@ class SathiAIFragment : Fragment() {
         }
     }
 
-    private fun loadSavedData() {
-        val savedMood = sharedPreferences.getInt("mood_score", 65)
-        val savedAnxiety = sharedPreferences.getInt("anxiety_score", 35)
-        val savedConversations = sharedPreferences.getInt("conversation_count", 0)
-
-        moodProgress.progress = savedMood
-        anxietyProgress.progress = savedAnxiety
-        moodScore.text = "$savedMood%"
-        anxietyScore.text = "$savedAnxiety%"
-        conversationCount.text = savedConversations.toString()
-    }
-
-    private fun saveData() {
-        sharedPreferences.edit().apply {
-            putInt("mood_score", moodProgress.progress)
-            putInt("anxiety_score", anxietyProgress.progress)
-            putInt("conversation_count", conversationCount.text.toString().toIntOrNull() ?: 0)
-            apply()
-        }
-    }
-
     private fun sendMessage() {
         val message = messageInput.text.toString().trim()
         if (message.isNotEmpty()) {
             messageInput.text.clear()
-
-            // Call ViewModel with Gemini API integration
-            val moodRating = moodProgress.progress / 10
-            viewModel.sendMessageToSathi(message, moodRating)
-
-            // Update conversation count
-            val count = conversationCount.text.toString().toIntOrNull() ?: 0
-            conversationCount.text = (count + 1).toString()
-            saveData()
+            // Send with default mood rating of 5
+            viewModel.sendMessageToSathi(message, 5)
         } else {
             Toast.makeText(context, "Please enter a message", Toast.LENGTH_SHORT).show()
         }
@@ -394,18 +389,6 @@ class SathiAIFragment : Fragment() {
                     "I just completed a breathing exercise. How can this help me manage my stress better?",
                     6
                 )
-
-                // Slightly improve mood
-                val currentMood = moodProgress.progress
-                val newMood = minOf(100, currentMood + 5)
-                moodProgress.progress = newMood
-                moodScore.text = "$newMood%"
-
-                val newAnxiety = 100 - newMood
-                anxietyProgress.progress = newAnxiety
-                anxietyScore.text = "$newAnxiety%"
-
-                saveData()
             }
             .setNegativeButton("Cancel", null)
             .create()
@@ -429,18 +412,6 @@ class SathiAIFragment : Fragment() {
                         "I'm grateful for: $gratitude. Can you help me understand why gratitude is important?",
                         7
                     )
-
-                    // Boost mood score
-                    val currentMood = moodProgress.progress
-                    val newMood = minOf(100, currentMood + 10)
-                    moodProgress.progress = newMood
-                    moodScore.text = "$newMood%"
-
-                    val newAnxiety = 100 - newMood
-                    anxietyProgress.progress = newAnxiety
-                    anxietyScore.text = "$newAnxiety%"
-
-                    saveData()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -448,81 +419,10 @@ class SathiAIFragment : Fragment() {
         dialog.show()
     }
 
-    private fun joinSupportGroup() {
-        val groups = arrayOf(
-            "Anxiety Support Group (45 members)",
-            "Depression Support Circle (32 members)",
-            "Women's Wellness Community (128 members)",
-            "Crisis Support Network (67 members)"
-        )
-
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("👥 Join Support Group")
-            .setItems(groups) { _, which ->
-                val selectedGroup = groups[which]
-                Toast.makeText(context, "✅ Joined: $selectedGroup", Toast.LENGTH_SHORT).show()
-
-                // Send via ViewModel - Gemini API integration
-                viewModel.sendMessageToSathi(
-                    "I just joined a support group: $selectedGroup. What should I expect and how can it help me?",
-                    6
-                )
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun showEmergencyContacts() {
-        val message = """
-            🆘 Emergency Mental Health Helplines:
-            
-            NIMHANS Helpline: 080-4611-0007
-            (Available 24/7 for mental health emergencies)
-            
-            Women Helpline: 1091
-            (For women in distress)
-            
-            National Emergency: 112
-            (For immediate danger)
-            
-            Vandrevala Foundation: 1860-2662-345
-            (24/7 Mental Health Support)
-            
-            iCall: 9152987821
-            (Psychosocial Helpline - English/Hindi)
-            
-            If you're having thoughts of self-harm, please call these numbers immediately. Your life matters. 💜
-        """.trimIndent()
-
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("🚨 Emergency Support")
-            .setMessage(message)
-            .setPositiveButton("Call NIMHANS") { _, _ ->
-                val intent = Intent(Intent.ACTION_DIAL).apply {
-                    data = Uri.parse("tel:08046110007")
-                }
-                startActivity(intent)
-            }
-            .setNeutralButton("Call Women Helpline") { _, _ ->
-                val intent = Intent(Intent.ACTION_DIAL).apply {
-                    data = Uri.parse("tel:1091")
-                }
-                startActivity(intent)
-            }
-            .setNegativeButton("Close", null)
-            .show()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        saveData()
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         mediaRecorder?.release()
         mediaRecorder = null
-        saveData()
     }
 
     // Data classes
@@ -598,5 +498,502 @@ class SathiAIFragment : Fragment() {
         }
 
         override fun getItemCount() = messages.size
+    }
+}
+
+/**
+ * Tab 2: Mental Health Dashboard
+ */
+class MentalHealthDashboardFragment : Fragment() {
+
+    private val viewModel: SathiViewModel by activityViewModels()
+    private lateinit var sharedPreferences: SharedPreferences
+
+    // UI Elements
+    private lateinit var moodScore: TextView
+    private lateinit var anxietyScore: TextView
+    private lateinit var stressScore: TextView
+    private lateinit var sleepScore: TextView
+    private lateinit var conversationCount: TextView
+    private lateinit var moodProgress: ProgressBar
+    private lateinit var anxietyProgress: ProgressBar
+    private lateinit var stressProgress: ProgressBar
+    private lateinit var sleepProgress: ProgressBar
+    private lateinit var moodHistoryRecycler: RecyclerView
+    private lateinit var insightsText: TextView
+    private lateinit var analyzeButton: Button
+    private lateinit var exportButton: Button
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_mental_health_dashboard, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sharedPreferences = requireContext().getSharedPreferences("SathiAI", Context.MODE_PRIVATE)
+
+        initializeViews(view)
+        setupClickListeners()
+        loadDashboardData()
+        observeViewModel()
+    }
+
+    private fun initializeViews(view: View) {
+        moodScore = view.findViewById(R.id.mood_score)
+        anxietyScore = view.findViewById(R.id.anxiety_score)
+        stressScore = view.findViewById(R.id.stress_score)
+        sleepScore = view.findViewById(R.id.sleep_score)
+        conversationCount = view.findViewById(R.id.conversation_count)
+        moodProgress = view.findViewById(R.id.mood_progress)
+        anxietyProgress = view.findViewById(R.id.anxiety_progress)
+        stressProgress = view.findViewById(R.id.stress_progress)
+        sleepProgress = view.findViewById(R.id.sleep_progress)
+        moodHistoryRecycler = view.findViewById(R.id.mood_history_recycler)
+        insightsText = view.findViewById(R.id.insights_text)
+        analyzeButton = view.findViewById(R.id.btn_analyze_trends)
+        exportButton = view.findViewById(R.id.btn_export_data)
+    }
+
+    private fun setupClickListeners() {
+        analyzeButton.setOnClickListener {
+            viewModel.analyzeMoodTrends()
+            Toast.makeText(context, "Analyzing your mental health patterns...", Toast.LENGTH_SHORT)
+                .show()
+        }
+
+        exportButton.setOnClickListener {
+            exportDashboardData()
+        }
+    }
+
+    private fun loadDashboardData() {
+        val savedMood = sharedPreferences.getInt("mood_score", 65)
+        val savedAnxiety = sharedPreferences.getInt("anxiety_score", 35)
+        val savedStress = sharedPreferences.getInt("stress_score", 40)
+        val savedSleep = sharedPreferences.getInt("sleep_score", 70)
+        val savedConversations = sharedPreferences.getInt("conversation_count", 0)
+
+        moodProgress.progress = savedMood
+        anxietyProgress.progress = savedAnxiety
+        stressProgress.progress = savedStress
+        sleepProgress.progress = savedSleep
+
+        moodScore.text = "$savedMood%"
+        anxietyScore.text = "$savedAnxiety%"
+        stressScore.text = "$savedStress%"
+        sleepScore.text = "$savedSleep%"
+        conversationCount.text = savedConversations.toString()
+
+        updateInsights(savedMood, savedAnxiety, savedStress, savedSleep)
+    }
+
+    private fun updateInsights(mood: Int, anxiety: Int, stress: Int, sleep: Int) {
+        val insights = buildString {
+            appendLine("📊 Mental Health Insights")
+            appendLine()
+
+            when {
+                mood >= 75 -> appendLine("✅ Your mood is excellent! Keep up the good work.")
+                mood >= 50 -> appendLine("😊 Your mood is stable. Consider stress-reducing activities.")
+                else -> appendLine("⚠️ Your mood needs attention. Try breathing exercises or talk to someone.")
+            }
+
+            appendLine()
+
+            when {
+                anxiety <= 30 -> appendLine("✅ Anxiety levels are low. You're managing well!")
+                anxiety <= 60 -> appendLine("⚠️ Moderate anxiety detected. Practice relaxation techniques.")
+                else -> appendLine("🚨 High anxiety. Consider reaching out for professional support.")
+            }
+
+            appendLine()
+
+            when {
+                sleep >= 70 -> appendLine("😴 Sleep quality is good!")
+                else -> appendLine("⚠️ Improve sleep hygiene. Aim for 7-8 hours nightly.")
+            }
+        }
+
+        insightsText.text = insights
+    }
+
+    private fun observeViewModel() {
+        // Observe mood score changes
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.moodScore.collect { score ->
+                val mood = (score * 10).coerceIn(0, 100)
+                moodProgress.progress = mood
+                moodScore.text = "$mood%"
+
+                val anxiety = 100 - mood
+                anxietyProgress.progress = anxiety
+                anxietyScore.text = "$anxiety%"
+
+                saveDashboardData()
+            }
+        }
+
+        // Observe session analysis
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.sessionAnalysis.collect { analysis ->
+                if (analysis.isNotEmpty()) {
+                    insightsText.text = "🔍 AI Analysis:\n\n$analysis"
+                }
+            }
+        }
+    }
+
+    private fun saveDashboardData() {
+        sharedPreferences.edit().apply {
+            putInt("mood_score", moodProgress.progress)
+            putInt("anxiety_score", anxietyProgress.progress)
+            putInt("stress_score", stressProgress.progress)
+            putInt("sleep_score", sleepProgress.progress)
+            putInt("conversation_count", conversationCount.text.toString().toIntOrNull() ?: 0)
+            apply()
+        }
+    }
+
+    private fun exportDashboardData() {
+        val summary = viewModel.getConversationSummary()
+        val exportData = """
+            📊 MENTAL HEALTH DASHBOARD EXPORT
+            ${SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date())}
+            
+            📈 Scores:
+            • Mood: ${moodScore.text}
+            • Anxiety: ${anxietyScore.text}
+            • Stress: ${stressScore.text}
+            • Sleep: ${sleepScore.text}
+            • Conversations: ${conversationCount.text}
+            
+            $summary
+        """.trimIndent()
+
+        // Show export dialog
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("📤 Export Dashboard")
+            .setMessage(exportData)
+            .setPositiveButton("Share") { _, _ ->
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, exportData)
+                    putExtra(Intent.EXTRA_SUBJECT, "Mental Health Dashboard")
+                }
+                startActivity(Intent.createChooser(shareIntent, "Share Dashboard"))
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+}
+
+/**
+ * Tab 3: Support Resources
+ */
+class SupportResourcesFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_support_resources, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupResourceButtons(view)
+    }
+
+    private fun setupResourceButtons(view: View) {
+        // Emergency Helplines Button
+        view.findViewById<Button>(R.id.btn_emergency_helplines).setOnClickListener {
+            showEmergencyHelplines()
+        }
+
+        // Support Groups Button
+        view.findViewById<Button>(R.id.btn_support_groups).setOnClickListener {
+            showSupportGroups()
+        }
+
+        // Therapist Finder Button
+        view.findViewById<Button>(R.id.btn_find_therapist).setOnClickListener {
+            findTherapist()
+        }
+
+        // Self-Care Tips Button
+        view.findViewById<Button>(R.id.btn_self_care_tips).setOnClickListener {
+            showSelfCareTips()
+        }
+
+        // Mental Health Articles Button
+        view.findViewById<Button>(R.id.btn_articles).setOnClickListener {
+            showMentalHealthArticles()
+        }
+
+        // Crisis Chat Button
+        view.findViewById<Button>(R.id.btn_crisis_chat).setOnClickListener {
+            startCrisisChat()
+        }
+    }
+
+    private fun showEmergencyHelplines() {
+        val helplines = """
+            🆘 24/7 Emergency Mental Health Helplines
+            
+            NIMHANS Helpline
+            📞 080-4611-0007
+            Available 24/7 for mental health emergencies
+            
+            Vandrevala Foundation
+            📞 1860-2662-345
+            24/7 Mental Health Support
+            
+            iCall Helpline
+            📞 9152987821
+            Psychosocial Support (English/Hindi)
+            Mon-Sat: 10 AM - 8 PM
+            
+            AASRA
+            📞 91-9820466726
+            24/7 Crisis Helpline
+            
+            Connecting NGO
+            📞 9922001122 / 9922004305
+            12 PM - 8 PM (All days)
+            
+            Women Helpline
+            📞 1091
+            For women in distress
+            
+            National Emergency
+            📞 112
+            For immediate danger
+            
+            💜 Your life matters. Please reach out if you need help.
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("🚨 Emergency Support")
+            .setMessage(helplines)
+            .setPositiveButton("Call NIMHANS") { _, _ ->
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:08046110007")
+                }
+                startActivity(intent)
+            }
+            .setNeutralButton("Call Vandrevala") { _, _ ->
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:18602662345")
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showSupportGroups() {
+        val groups = arrayOf(
+            "Anxiety Support Group (45 members online)",
+            "Depression Support Circle (32 members)",
+            "Women's Wellness Community (128 members)",
+            "Crisis Support Network (67 members)",
+            "Post-Trauma Recovery Group (23 members)",
+            "Bipolar Support Forum (41 members)"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("👥 Join Support Group")
+            .setItems(groups) { _, which ->
+                val selectedGroup = groups[which]
+                Toast.makeText(
+                    context,
+                    "✅ Joining: $selectedGroup",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun findTherapist() {
+        val message = """
+            🔍 Find a Therapist Near You
+            
+            Recommended Mental Health Professionals:
+            
+            1. Practo
+               Search verified therapists & book online
+               Website: www.practo.com
+            
+            2. Manastha
+               Women-focused mental health
+               Website: www.manastha.com
+            
+            3. YourDOST
+               Online counseling platform
+               Website: www.yourdost.com
+            
+            4. Wysa
+               AI + Human therapist support
+               Website: www.wysa.io
+            
+            5. InnerHour
+               Evidence-based therapy
+               Website: www.theinnerhour.com
+            
+            💡 Tip: Look for therapists specializing in:
+            - Women's mental health
+            - Trauma & PTSD
+            - Anxiety & depression
+            - Relationship counseling
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("🩺 Professional Help")
+            .setMessage(message)
+            .setPositiveButton("Search Online") { _, _ ->
+                val browserIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.practo.com/search?specialization=Psychologist")
+                )
+                startActivity(browserIntent)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showSelfCareTips() {
+        val tips = """
+            💆‍♀️ Self-Care Tips for Mental Wellness
+            
+            🧘‍♀️ Daily Practices:
+            • 10-minute morning meditation
+            • Gratitude journaling (3 things daily)
+            • 30 minutes of physical activity
+            • 7-8 hours of sleep
+            • Limit social media (max 1 hour/day)
+            
+            🫁 Stress Management:
+            • 4-7-8 breathing technique
+            • Progressive muscle relaxation
+            • Nature walks
+            • Listen to calming music
+            • Talk to a trusted friend
+            
+            🍎 Lifestyle:
+            • Balanced diet (reduce caffeine)
+            • Stay hydrated (8 glasses water)
+            • Regular sleep schedule
+            • Limit alcohol
+            • Spend time in sunlight
+            
+            💡 Mental Exercises:
+            • Practice mindfulness
+            • Challenge negative thoughts
+            • Set realistic goals
+            • Celebrate small wins
+            • Learn to say "no"
+            
+            📱 Apps to Try:
+            • Headspace (meditation)
+            • Calm (sleep & relaxation)
+            • Moodpath (mood tracking)
+            • Sanvello (anxiety management)
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("💖 Self-Care Guide")
+            .setMessage(tips)
+            .setPositiveButton("Got it!", null)
+            .show()
+    }
+
+    private fun showMentalHealthArticles() {
+        val articles = """
+            📚 Mental Health Resources
+            
+            Understanding Mental Health:
+            • What is depression?
+            • Anxiety disorders explained
+            • PTSD and trauma
+            • Bipolar disorder basics
+            
+            Coping Strategies:
+            • Managing panic attacks
+            • Dealing with grief
+            • Overcoming social anxiety
+            • Building resilience
+            
+            Women's Mental Health:
+            • Postpartum depression
+            • Menstrual health & mood
+            • Work-life balance
+            • Domestic violence support
+            
+            Recovery Stories:
+            • "I overcame depression"
+            • "Living with anxiety"
+            • "My therapy journey"
+            • "Finding hope again"
+            
+            📱 Recommended Websites:
+            • NIMHANS (nimhans.ac.in)
+            • Mind.org.uk
+            • Moodcafe.co.uk
+            • BeyondBlue.org.au
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("📖 Learning Resources")
+            .setMessage(articles)
+            .setPositiveButton("Read Online") { _, _ ->
+                val browserIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.nimhans.ac.in/mental-health-info")
+                )
+                startActivity(browserIntent)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun startCrisisChat() {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("💬 Crisis Chat Support")
+            .setMessage(
+                """
+                Connect with a crisis counselor via chat:
+                
+                📱 iCall WhatsApp
+                +91-9152987821
+                
+                📱 Vandrevala Foundation
+                Chat available on website
+                www.vandrevalafoundation.com
+                
+                📱 7 Cups
+                Free emotional support chat
+                www.7cups.com
+                
+                These services are confidential and free.
+                A trained counselor will respond within minutes.
+            """.trimIndent()
+            )
+            .setPositiveButton("Open Chat") { _, _ ->
+                val browserIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.7cups.com")
+                )
+                startActivity(browserIntent)
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 }

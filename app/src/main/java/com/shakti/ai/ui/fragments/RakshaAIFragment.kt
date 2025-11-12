@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
 import com.shakti.ai.ai.RakshaAI
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 class RakshaAIFragment : Fragment() {
 
-    private val viewModel: RakshaViewModel by viewModels()
+    private val viewModel: RakshaViewModel by activityViewModels()
 
     // UI Elements
     private lateinit var btnRevealApp: Button

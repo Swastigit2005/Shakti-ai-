@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 
 class DhanShaktiAIFragment : Fragment() {
 
-    private val viewModel: DhanShaktiViewModel by viewModels()
+    private val viewModel: DhanShaktiViewModel by activityViewModels()
 
     // UI Elements
     private lateinit var financialLiteracyScore: TextView

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Emergency Status -->
+        <TextView
+            android:id="@+id/emergency_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚪ Normal Status"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Main SOS Button -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/error">
+
+            <Button
+                android:id="@+id/btn_sos"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:text="🚨 SOS\nEMERGENCY"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/error" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Emergency Services -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📞 Emergency Services"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_call_police"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="👮 Call Police (100)"
+                    android:backgroundTint="@color/error"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_call_ambulance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🚑 Call Ambulance (108)"
+                    android:backgroundTint="@color/warning" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Quick Actions -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Quick Actions"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_notify_contacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📱 Notify Emergency Contacts"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_share_location"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📍 Share Location"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_flashlight_strobe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Flashlight Strobe"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/btn_siren"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔊 Play Siren" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Cancel Emergency -->
+        <Button
+            android:id="@+id/btn_cancel_emergency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="✖️ Cancel Emergency"
+            android:backgroundTint="@color/text_secondary" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

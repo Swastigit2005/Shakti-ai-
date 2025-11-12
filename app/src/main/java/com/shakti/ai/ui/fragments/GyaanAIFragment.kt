@@ -8,7 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.shakti.ai.R
 import com.shakti.ai.viewmodel.GyaanViewModel
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class GyaanAIFragment : Fragment() {
 
-    private val viewModel: GyaanViewModel by viewModels()
+    private val viewModel: GyaanViewModel by activityViewModels()
 
     private lateinit var categoryInput: EditText
     private lateinit var stateInput: EditText
