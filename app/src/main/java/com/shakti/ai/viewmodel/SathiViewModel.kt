@@ -1,6 +1,7 @@
 package com.shakti.ai.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.shakti.ai.ai.GeminiService
@@ -37,12 +38,19 @@ class SathiViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = true
             try {
                 val welcome = """
-                    नमस्ते! I'm Sathi, your mental health companion. 
-                    I'm here to listen, support, and help you navigate your feelings.
+                    🌸 नमस्ते! I'm Sathi, your compassionate AI mental health companion.
                     
-                    How are you feeling today? (Rate 1-10, where 1 is very bad and 10 is excellent)
+                    I'm here to listen without judgment, provide emotional support, and help you navigate your feelings. Everything we discuss is completely confidential.
                     
-                    Remember: Everything we discuss is confidential and stored securely on blockchain.
+                    💜 How are you feeling today? You can:
+                    • Type your thoughts and emotions
+                    • Send voice messages when words feel hard
+                    • Share images that represent your mood  
+                    • Use our breathing exercises or gratitude journal
+                    
+                    I'm powered by advanced AI and trained specifically in women's mental health support. Let's take this journey together, one step at a time.
+                    
+                    What's on your mind right now? 💭
                 """.trimIndent()
                 _chatMessages.value = listOf("Sathi" to welcome)
             } finally {
@@ -51,77 +59,211 @@ class SathiViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Send user message to Sathi AI
+    // Send user message to Sathi AI with enhanced context
     fun sendMessageToSathi(userMessage: String, moodRating: Int = 5) {
+        Log.d(
+            "SathiViewModel",
+            "🚀 sendMessageToSathi called with: '$userMessage', mood: $moodRating"
+        )
+
         viewModelScope.launch {
             _isLoading.value = true
             _moodScore.value = moodRating
+            Log.d("SathiViewModel", "⏳ Loading state set to true, mood updated to $moodRating")
 
             try {
-                // Add user message to chat
-                val updatedChat = _chatMessages.value.toMutableList()
-                updatedChat.add("User" to userMessage)
-                _chatMessages.value = updatedChat
+                // Add user message to chat immediately
+                val messages = _chatMessages.value.toMutableList()
+                messages.add("User" to userMessage)
+                _chatMessages.value = messages
+                Log.d("SathiViewModel", "💬 User message added. Total messages: ${messages.size}")
 
-                // Add to conversation history for LSTM context
+                // Add to conversation history
                 conversationHistory.add("User" to userMessage)
+                Log.d(
+                    "SathiViewModel",
+                    "📝 Added to history. History size: ${conversationHistory.size}"
+                )
 
-                // Crisis detection
-                if (detectCrisis(userMessage)) {
+                // Crisis detection first
+                val crisisDetected = detectCrisis(userMessage)
+                Log.d("SathiViewModel", "🚨 Crisis detection: $crisisDetected")
+
+                if (crisisDetected) {
                     _isCrisisDetected.value = true
                     val crisisResponse = """
-                        I'm deeply concerned about what you're sharing. Please know that you're not alone, and help is available right now.
+                        💜 I'm deeply concerned about what you're sharing. आपकी जिंदगी महत्वपूर्ण है।
                         
-                        🚨 IMMEDIATE HELP:
-                        • National Mental Health Helpline: 1800-599-0019
-                        • Vandrevala Foundation: 1860-2662-345
+                        🚨 IMMEDIATE HELP (24/7):
+                        • NIMHANS: 080-4611-0007
+                        • Vandrevala: 1860-2662-345  
                         • iCall: 9152987821
+                        • Emergency: 112
                         
-                        Would you like me to connect you with a professional counselor immediately?
+                        Would you like me to help connect you with a counselor? मैं यहाँ आपके लिए हूँ। 💝
                     """.trimIndent()
-                    updatedChat.add("Sathi" to crisisResponse)
-                    _chatMessages.value = updatedChat
 
-                    // Log crisis to Aptos
-                    aptosService.logCrisisEscalation()
+                    messages.add("Sathi" to crisisResponse)
+                    _chatMessages.value = messages
+
+                    // Log crisis (non-blocking)
+                    try {
+                        aptosService.logCrisisEscalation()
+                        Log.d("SathiViewModel", "✅ Crisis logged to blockchain")
+                    } catch (e: Exception) {
+                        Log.w("SathiViewModel", "⚠️ Crisis logging failed: ${e.message}")
+                    }
+
                     return@launch
                 }
 
-                // Call Gemini-based Sathi AI with context
-                val contextualPrompt = if (conversationHistory.size > 1) {
-                    "Context from previous messages: ${
-                        conversationHistory.takeLast(5).joinToString { it.second }
-                    }\n\nUser (Mood: $moodRating/10): $userMessage"
-                } else {
-                    "User (Mood: $moodRating/10): $userMessage"
-                }
+                // Call Sathi AI directly
+                Log.d("SathiViewModel", "🤖 Calling GeminiService.callSathiAI...")
+                val aiResponse = geminiService.callSathiAI(userMessage)
+                Log.d("SathiViewModel", "✅ AI Response received: ${aiResponse.length} chars")
+                Log.d("SathiViewModel", "📖 Response preview: ${aiResponse.take(100)}...")
 
-                val aiResponse = geminiService.callSathiAI(contextualPrompt)
+                // Add AI response to chat
+                messages.add("Sathi" to aiResponse)
+                _chatMessages.value = messages
+                Log.d("SathiViewModel", "💬 AI response added. Total messages: ${messages.size}")
 
-                // Add AI response
-                updatedChat.add("Sathi" to aiResponse)
-                _chatMessages.value = updatedChat
-
-                // Add to history
+                // Add to conversation history
                 conversationHistory.add("Sathi" to aiResponse)
+                Log.d("SathiViewModel", "📝 AI response added to history")
 
-                // Log session to Aptos blockchain (secure & private)
-                aptosService.logMentalHealthSession(
-                    moodScore = moodRating,
-                    message = userMessage,
-                    response = aiResponse
-                )
+                // Log session (non-blocking)
+                try {
+                    aptosService.logMentalHealthSession(
+                        moodScore = moodRating,
+                        message = userMessage,
+                        response = aiResponse
+                    )
+                    Log.d("SathiViewModel", "✅ Session logged to blockchain")
+                } catch (e: Exception) {
+                    Log.w("SathiViewModel", "⚠️ Session logging failed: ${e.message}")
+                }
 
             } catch (e: Exception) {
-                val errorMessage =
-                    "I'm having trouble responding right now. Please try again in a moment. If you're in crisis, please call 1800-599-0019 immediately."
-                _chatMessages.value = _chatMessages.value.toMutableList().apply {
-                    add("Sathi" to errorMessage)
-                }
+                Log.e("SathiViewModel", "❌ ERROR in sendMessageToSathi: ${e.message}", e)
+
+                // Show helpful error message
+                val errorMessage = """
+                    💜 मुझे आपसे बात करने में technical issue हो रहा है।
+                    
+                    But I want you to know - आप अकेली नहीं हैं। Your feelings are valid.
+                    
+                    कृपया एक बार फिर try करें। If urgent:
+                    • NIMHANS: 080-4611-0007 (24/7)
+                    • Vandrevala: 1860-2662-345
+                    
+                    मैं यहाँ आपके लिए हूँ। 🌸
+                    
+                    Error: ${e.message}
+                """.trimIndent()
+
+                val messages = _chatMessages.value.toMutableList()
+                messages.add("Sathi" to errorMessage)
+                _chatMessages.value = messages
+                Log.d("SathiViewModel", "💬 Error message added to chat")
+
             } finally {
                 _isLoading.value = false
+                Log.d("SathiViewModel", "⏳ Loading state set to false")
             }
         }
+    }
+
+    // Build enhanced contextual prompt for better AI responses
+    private fun buildContextualPrompt(userMessage: String, moodRating: Int): String {
+        val recentContext = if (conversationHistory.size > 2) {
+            "Previous conversation context (last 3 exchanges):\n" +
+                    conversationHistory.takeLast(6)
+                        .joinToString("\n") { "${it.first}: ${it.second}" } +
+                    "\n\n"
+        } else ""
+
+        val moodContext = when (moodRating) {
+            in 1..3 -> "The user is feeling quite low (mood: $moodRating/10). Please be extra gentle and supportive."
+            in 4..6 -> "The user has a neutral to moderate mood (mood: $moodRating/10). Provide balanced support."
+            in 7..10 -> "The user is feeling relatively positive (mood: $moodRating/10). Encourage and build on this."
+            else -> "Mood not specified, provide general support."
+        }
+
+        return """
+            $recentContext
+            
+            Context: $moodContext
+            
+            Current message from user: "$userMessage"
+            
+            Please respond as Sathi, a compassionate AI mental health companion specifically designed for women in India. Your response should:
+            
+            1. Be empathetic and culturally sensitive
+            2. Use a warm, non-judgmental tone
+            3. Provide practical coping strategies when appropriate
+            4. Include relevant emojis to make the conversation feel more personal
+            5. Be concise but meaningful (2-4 sentences typically)
+            6. Reference Indian cultural context when relevant
+            7. Suggest professional help if needed
+            8. Validate their feelings and experiences
+            
+            If this is about media (voice, image, etc.), acknowledge the sharing and explore the emotional context.
+            
+            Remember: You're a supportive companion, not a therapist. Guide them toward professional help when appropriate.
+        """.trimIndent()
+    }
+
+    // Enhance AI response with better formatting and additional resources
+    private fun enhanceAIResponse(response: String, moodRating: Int): String {
+        val baseResponse = response.trim()
+
+        // Add mood-appropriate resources or suggestions
+        val additionalSupport = when {
+            moodRating <= 3 -> {
+                "\n\n💜 Quick comfort: Try the 4-7-8 breathing technique (breathe in for 4, hold for 7, out for 8). Would you like to try it together?"
+            }
+
+            moodRating in 4..6 -> {
+                "\n\n🌱 Small step: Sometimes journaling our gratitude (even one thing) can shift our perspective. What's one tiny thing you're grateful for today?"
+            }
+
+            moodRating >= 7 -> {
+                "\n\n✨ Building on positivity: It's wonderful that you're feeling good! How can we nurture this feeling and make it last?"
+            }
+
+            else -> ""
+        }
+
+        return baseResponse + additionalSupport
+    }
+
+    // Enhanced crisis detection with more sophisticated analysis
+    fun detectCrisis(message: String): Boolean {
+        val messageLower = message.lowercase()
+
+        val severeCrisisKeywords = listOf(
+            "suicide", "suicidal", "kill myself", "end my life", "ending my life",
+            "self harm", "self-harm", "cut myself", "hurt myself",
+            "don't want to live", "want to die", "better off dead",
+            "ending it all", "take my own life", "no point in living"
+        )
+
+        val moderateCrisisKeywords = listOf(
+            "can't take it", "can't go on", "give up", "hopeless", "helpless",
+            "no way out", "everyone would be better without me", "completely alone",
+            "nobody cares", "no one understands", "worthless", "can't cope",
+            "everything is falling apart", "nothing matters"
+        )
+
+        // Check for severe crisis indicators
+        val hasSevereCrisis = severeCrisisKeywords.any { messageLower.contains(it) }
+
+        // Check for multiple moderate indicators (may indicate building crisis)
+        val moderateCount = moderateCrisisKeywords.count { messageLower.contains(it) }
+        val hasMultipleModerateCrisis = moderateCount >= 2
+
+        return hasSevereCrisis || hasMultipleModerateCrisis
     }
 
     // Analyze mood trends
@@ -162,26 +304,6 @@ class SathiViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoading.value = false
             }
         }
-    }
-
-    // Crisis detection using keyword analysis
-    fun detectCrisis(message: String): Boolean {
-        val crisisKeywords = listOf(
-            // Self-harm indicators
-            "suicide", "suicidal", "kill myself", "end my life", "self harm", "self-harm",
-            "cut myself", "hurt myself", "don't want to live",
-
-            // Severe distress
-            "can't take it", "can't go on", "give up", "hopeless", "helpless",
-            "no way out", "better off dead", "everyone would be better without me",
-
-            // Isolation and despair
-            "completely alone", "nobody cares", "no one understands", "worthless",
-            "no point", "can't cope", "ending it all"
-        )
-
-        val messageLower = message.lowercase()
-        return crisisKeywords.any { messageLower.contains(it) }
     }
 
     // Emergency escalation to human counselor

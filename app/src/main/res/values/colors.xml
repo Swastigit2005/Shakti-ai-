@@ -36,6 +36,14 @@
     <color name="black">#FF000000</color>
     <color name="transparent">#00000000</color>
 
+    <!-- Additional Colors for New Design -->
+    <color name="green_500">#4CAF50</color>
+    <color name="blue_500">#2196F3</color>
+    <color name="cyan_500">#00BCD4</color>
+    <color name="red_500">#F44336</color>
+    <color name="orange_500">#FF9800</color>
+    <color name="indigo_500">#3F51B5</color>
+
     <!-- AI Module Colors -->
     <color name="sathi_color">#E91E63</color>        <!-- Pink - Mental Health -->
     <color name="guardian_color">#2196F3</color>     <!-- Blue - Safety -->

@@ -3,141 +3,366 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="#F8F9FA">
 
-    <androidx.core.widget.NestedScrollView
+    <!-- Main Content -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:orientation="vertical">
 
+        <!-- Top Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="#F8F9FA">
 
-            <!-- Chat Section -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
+            <!-- Menu/Drawer Icon -->
+            <ImageView
+                android:id="@+id/btn_menu"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_menu"
+                android:contentDescription="Menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp" />
+
+            <!-- Center Title with Upgrade Icon -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal">
 
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_diamond"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/purple_500" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sathi AI"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/purple_500" />
+            </LinearLayout>
+
+            <!-- Camera/QR Scanner Icon -->
+            <ImageView
+                android:id="@+id/btn_scanner"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_qr_scanner"
+                android:contentDescription="Scanner"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="4dp" />
+        </LinearLayout>
+
+        <!-- Chat Content Area -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- Chat RecyclerView (Hidden initially, shown when chat starts) -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/chat_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:padding="16dp"
+                android:clipToPadding="false"
+                android:scrollbars="none" />
+
+            <!-- Welcome/Empty State (Visible initially) -->
+            <LinearLayout
+                android:id="@+id/welcome_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="visible">
+
+                <!-- Main Question Text -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="What can I help with?"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:gravity="center"
+                    android:layout_marginBottom="48dp" />
+
+                <!-- Suggestion Cards Grid -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:gravity="center">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="💬 Chat with SATHI"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="12dp" />
-
-                    <!-- Chat Messages RecyclerView -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/chat_recycler_view"
-                        android:layout_width="match_parent"
-                        android:layout_height="400dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="#F5F5F5"
-                        android:padding="8dp"
-                        android:scrollbars="vertical" />
-
-                    <!-- Message Input -->
+                    <!-- First Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center"
+                        android:layout_marginBottom="16dp">
 
-                        <EditText
-                            android:id="@+id/message_input"
+                        <!-- Emotional Support Card -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_emotional_support"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="80dp"
                             android:layout_weight="1"
-                            android:hint="Type your message..."
-                            android:textSize="14sp"
-                            android:padding="12dp"
-                            android:background="@android:drawable/edit_text"
-                            android:minHeight="48dp"
-                            android:maxLines="3"
-                            android:inputType="textMultiLine|textCapSentences" />
+                            android:layout_marginEnd="8dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/white"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
 
-                        <ImageButton
-                            android:id="@+id/btn_send_message"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:padding="16dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_heart"
+                                    android:layout_marginEnd="12dp"
+                                    app:tint="@color/green_500" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Emotional Support"
+                                    android:textSize="14sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Mental Health Advice Card -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_mental_health"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_weight="1"
                             android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_menu_send"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Send Message"
-                            app:tint="@color/sathi_color" />
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/white"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:padding="16dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_psychology"
+                                    android:layout_marginEnd="12dp"
+                                    app:tint="@color/blue_500" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Mental Health"
+                                    android:textSize="14sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+                    </LinearLayout>
+
+                    <!-- Second Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <!-- Coping Strategies Card -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_coping_strategies"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/white"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:padding="16dp">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_analytics"
+                                    android:layout_marginEnd="12dp"
+                                    app:tint="@color/cyan_500" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Coping Strategies"
+                                    android:textSize="14sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- More Options Card -->
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/card_more_options"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/white"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="More"
+                                    android:textSize="14sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
                     </LinearLayout>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </LinearLayout>
+        </RelativeLayout>
 
-            <!-- Quick Actions Card -->
+        <!-- Bottom Input Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/white"
+            android:padding="16dp">
+
+            <!-- Input Container -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="28dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="4dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- Add/Attachment Icon -->
+                    <ImageView
+                        android:id="@+id/btn_add_attachment"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_add"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="8dp"
+                        android:contentDescription="Add attachment"
+                        app:tint="@color/text_secondary" />
+
+                    <!-- Message Input Field -->
+                    <EditText
+                        android:id="@+id/message_input"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Quick Actions"
+                        android:layout_weight="1"
+                        android:hint="Ask Sathi AI"
                         android:textSize="16sp"
-                        android:textStyle="bold"
+                        android:textColorHint="@color/text_secondary"
                         android:textColor="@color/text_primary"
-                        android:layout_marginBottom="12dp" />
+                        android:background="@android:color/transparent"
+                        android:padding="12dp"
+                        android:minHeight="40dp"
+                        android:maxLines="4"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:scrollbars="vertical" />
 
-                    <Button
+                    <!-- Voice/Microphone Icon -->
+                    <ImageView
                         android:id="@+id/btn_voice_message"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="🎤 Voice"
-                        android:textSize="14sp"
-                        android:backgroundTint="@color/sathi_color"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_mic"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="8dp"
+                        android:contentDescription="Voice message"
+                        app:tint="@color/text_secondary" />
 
-                    <Button
-                        android:id="@+id/btn_upload_media"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="📤 Upload Media"
-                        android:textSize="14sp"
-                        android:backgroundTint="@color/sathi_color"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_breathing_exercise"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="🫁 Breathing Exercise"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_gratitude_journal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="💗 Gratitude Journal"
-                        android:textSize="14sp" />
+                    <!-- Audio Waveform Icon (for voice recording state) -->
+                    <ImageView
+                        android:id="@+id/btn_audio_wave"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_audio_waves"
+                        android:background="@drawable/bg_audio_recording"
+                        android:padding="8dp"
+                        android:contentDescription="Recording audio"
+                        android:visibility="gone"
+                        app:tint="@color/white" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+
+    <!-- Floating Action Button for Media Upload (Initially Hidden) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_media_upload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_upload"
+        android:contentDescription="Upload media"
+        android:visibility="gone"
+        app:tint="@color/white"
+        app:backgroundTint="@color/sathi_color" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

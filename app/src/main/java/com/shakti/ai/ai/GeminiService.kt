@@ -1,14 +1,20 @@
 package com.shakti.ai.ai
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
 import com.shakti.ai.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.InputStream
 
 /**
  * GeminiService - Unified AI service with RunAnywhere SDK integration
+ * Enhanced with Image Analysis and Multilingual Voice Support
  *
  * Priority:
  * 1. RunAnywhere SDK (on-device, privacy-first) - Primary
@@ -20,13 +26,20 @@ class GeminiService(private val context: Context) {
 
     private val apiKey: String by lazy {
         try {
-            // Try to get API key from BuildConfig
-            val buildConfigClass = Class.forName("com.shakti.ai.BuildConfig")
-            val apiKeyField = buildConfigClass.getField("GEMINI_API_KEY")
-            val key = apiKeyField.get(null) as? String ?: "DEMO_MODE"
-            if (key.isBlank()) "DEMO_MODE" else key
+            // Get API key directly from BuildConfig
+            val key = BuildConfig.GEMINI_API_KEY
+            Log.d(
+                TAG,
+                "API key loaded: ${if (key.isNotEmpty()) "Valid key found" else "Empty key"}"
+            )
+            if (key.isBlank() || key == "your_api_key_here") {
+                Log.w(TAG, "API key is empty or placeholder. Check local.properties")
+                "DEMO_MODE"
+            } else {
+                key
+            }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to get API key from BuildConfig: ${e.message}")
+            Log.e(TAG, "Failed to get API key from BuildConfig: ${e.message}")
             "DEMO_MODE"
         }
     }
@@ -52,6 +65,14 @@ class GeminiService(private val context: Context) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    // Vision-enabled model for image analysis
+    private val visionModel by lazy {
+        GenerativeModel(
+            modelName = "gemini-1.5-flash",
+            apiKey = apiKey
+        )
     }
 
     // System instructions for different AI purposes
@@ -217,49 +238,49 @@ class GeminiService(private val context: Context) {
     // Different specialized models for different AI purposes - LAZY INITIALIZATION (Gemini Fallback)
     private val sathiModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val nyayaModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val dhanShaktiModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val gyaanModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val swasthyaModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val rakshaModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
     private val arogyaModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
@@ -267,32 +288,110 @@ class GeminiService(private val context: Context) {
     // Generic model for other tasks
     private val generalModel by lazy {
         GenerativeModel(
-            modelName = "gemini-2.0-flash-exp",
+            modelName = "gemini-1.5-flash",
             apiKey = apiKey
         )
     }
 
-    // Call Sathi AI for mental health - Uses RunAnywhere SDK first, Gemini as fallback
+    // Call Sathi AI for mental health - DIRECT & ROBUST INTEGRATION
     suspend fun callSathiAI(userMessage: String): String = withContext(Dispatchers.IO) {
-        try {
-            // Try RunAnywhere SDK first (on-device)
-            if (isRunAnywhereReady()) {
-                Log.d(TAG, "Using RunAnywhere SDK for Sathi AI")
-                return@withContext runAnywhereService?.callSathiAI(userMessage)
-                    ?: getDemoResponse("sathi", userMessage)
+        Log.d(TAG, "🚀 DIRECT SATHI AI CALL - Input: '$userMessage'")
+
+        return@withContext try {
+            // Direct API key validation
+            val apiKey = BuildConfig.GEMINI_API_KEY
+            Log.d(
+                TAG,
+                "🔑 API Key Status: ${if (apiKey.isNotBlank() && apiKey != "your_api_key_here") "VALID (${apiKey.length} chars)" else "INVALID"}"
+            )
+
+            if (apiKey.isBlank() || apiKey == "your_api_key_here") {
+                Log.w(TAG, "⚠️ API Key not configured - using enhanced demo mode")
+                return@withContext getIntelligentDemoResponse(userMessage)
             }
 
-            // Fallback to Gemini API if available
-            if (!isApiKeyValid) {
-                return@withContext getDemoResponse("sathi", userMessage)
+            Log.d(TAG, "🌟 Creating Gemini model...")
+            val model = GenerativeModel(
+                modelName = "gemini-1.5-flash",
+                apiKey = apiKey
+            )
+
+            // Create enhanced prompt
+            val prompt = """
+                You are Sathi, a warm and caring AI companion for Indian women's mental health support.
+                
+                User said: "$userMessage"
+                
+                Respond as Sathi with these qualities:
+                - Be genuinely caring and empathetic
+                - Mix Hindi and English naturally (Hinglish)
+                - Keep response to 2-4 sentences
+                - Use appropriate emojis
+                - Acknowledge their feelings
+                - Offer gentle support or advice
+                - Be culturally sensitive to Indian context
+                
+                Always respond in a warm, conversational tone like a caring friend.
+            """.trimIndent()
+
+            Log.d(TAG, "🌐 Calling Gemini API...")
+            val response = model.generateContent(prompt)
+            val responseText = response.text?.trim()
+
+            Log.d(TAG, "✅ Response received: ${responseText?.length ?: 0} characters")
+            Log.d(TAG, "💬 Response preview: ${responseText?.take(100)}...")
+
+            if (responseText.isNullOrBlank()) {
+                Log.w(TAG, "⚠️ Empty response from API")
+                return@withContext "💜 मैं आपकी बात सुन रही हूँ। I'm here for you. कृपया मुझे और बताएं। 🤗"
             }
-            Log.d(TAG, "Using Gemini API for Sathi AI (fallback)")
-            val fullPrompt = "$sathiSystemInstruction\n\nUser: $userMessage"
-            val response = sathiModel.generateContent(fullPrompt)
-            response.text ?: "I'm here to support you. Could you tell me more?"
+
+            responseText
+
         } catch (e: Exception) {
-            Log.e(TAG, "Sathi AI error", e)
-            "I encountered an issue. Please try again: ${e.message}"
+            Log.e(TAG, "❌ Gemini API Error: ${e.message}", e)
+
+            // Return supportive fallback response with error context
+            """
+            💜 मुझे connect करने में थोड़ी परेशानी हो रही है, लेकिन I'm still here for you.
+            
+            आप जो भी महसूस कर रहे हैं, that's completely valid. 
+            
+            Please try again - मैं आपकी बात सुनना चाहती हूँ। 🌸
+            
+            (Technical: ${e.message?.take(50) ?: "Connection issue"})
+            """.trimIndent()
+        }
+    }
+
+    // Intelligent demo response with better context awareness
+    private fun getIntelligentDemoResponse(userMessage: String): String {
+        val msg = userMessage.lowercase()
+
+        return when {
+            // Greetings
+            msg.contains("hello") || msg.contains("hi") || msg.contains("नमस्ते") || msg.contains("हैलो") ->
+                "💜 नमस्ते! Hello there! I'm Sathi, and I'm so glad you're here. मैं आपकी सुनने के लिए यहाँ हूँ। How are you feeling today? 🌸"
+
+            // Emotional states
+            msg.contains("sad") || msg.contains("दुखी") || msg.contains("upset") ->
+                "💙 I can hear that you're feeling sad, और मैं समझ सकती हूँ। It's okay to feel this way. आप अकेली नहीं हैं - I'm here with you. Can you tell me more about what's making you feel this way? 🤗"
+
+            msg.contains("happy") || msg.contains("good") || msg.contains("खुश") ->
+                "✨ How wonderful that you're feeling happy! यह सुनकर मुझे भी खुशी हुई। What's bringing you joy today? Let's celebrate these good feelings together! 😊"
+
+            msg.contains("stressed") || msg.contains("tension") || msg.contains("परेशान") ->
+                "🌱 Stress can feel so overwhelming, मैं समझती हूँ। Let's take this one step at a time. What's the biggest thing causing you stress right now? Together we can find ways to cope. 💚"
+
+            msg.contains("family") || msg.contains("parents") || msg.contains("परिवार") ->
+                "👨‍👩‍👧‍👦 Family relationships can be complex, especially in our Indian culture. मैं समझती हूँ कि sometimes it's challenging. What's happening with your family that you'd like to talk about? 💜"
+
+            msg.contains("work") || msg.contains("job") || msg.contains("कम") ->
+                "💼 Work stress is so common, especially for women juggling multiple responsibilities. आप जो feel कर रहे हैं, that's completely normal. Tell me more about what's challenging you at work? 🌟"
+
+            // Default supportive response
+            else ->
+                "💝 Thank you for sharing with me. मैं यहाँ आपकी बात सुनने के लिए हूँ। Your feelings are important to me. कृपया मुझे और बताएं - I want to understand and support you through whatever you're experiencing. 🤗"
         }
     }
 
@@ -468,6 +567,87 @@ class GeminiService(private val context: Context) {
             "Error: ${e.message}"
         }
     }
+
+    // Image analysis with Vision model
+    suspend fun analyzeImage(uri: Uri): String = withContext(Dispatchers.IO) {
+        try {
+            if (!isApiKeyValid) {
+                return@withContext "Image analysis requires API key. Please add your Gemini API key in local.properties."
+            }
+
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream?.close()
+
+            if (bitmap == null) {
+                return@withContext "Failed to decode image. Please try another image."
+            }
+
+            val prompt = """
+                You are Sathi AI, analyzing an image shared by a user for emotional context.
+                
+                Please describe:
+                1. What you see in this image
+                2. What emotions or feelings this image might represent
+                3. How this relates to mental health or well-being
+                4. Provide supportive, empathetic response
+                
+                Respond warmly in Hindi-English mix (Hinglish) as appropriate for an Indian woman's mental health companion.
+            """.trimIndent()
+
+            val content = content {
+                image(bitmap)
+                text(prompt)
+            }
+
+            val response = visionModel.generateContent(content)
+            response.text
+                ?: "मुझे image को समझने में कुछ परेशानी हो रही है। Could you tell me more about what this image means to you? 💜"
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Image analysis error", e)
+            "Image analysis failed: ${e.message}. Please try sharing the image again or tell me about it in words. 🌸"
+        }
+    }
+
+    // Enhanced Sathi AI call with image support
+    suspend fun callSathiAIWithImage(userMessage: String, imageUri: Uri?): String =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!isApiKeyValid) {
+                    return@withContext getIntelligentDemoResponse(userMessage)
+                }
+
+                if (imageUri != null) {
+                    // Analyze image first
+                    val imageAnalysis = analyzeImage(imageUri)
+
+                    // Combine text and image analysis
+                    val combinedPrompt = """
+                    You are Sathi, a compassionate AI mental health companion for Indian women.
+                    
+                    User shared an image and said: "$userMessage"
+                    
+                    Image analysis: $imageAnalysis
+                    
+                    Respond warmly acknowledging both their words and the image they shared. 
+                    Be empathetic and supportive, mixing Hindi-English naturally.
+                    Keep response to 2-4 sentences.
+                """.trimIndent()
+
+                    val response = sathiModel.generateContent(combinedPrompt)
+                    return@withContext response.text
+                        ?: "💜 Thank you for sharing this image with me. मैं समझ सकती हूँ कि pictures sometimes express what words cannot. Tell me more about what this means to you? 🌸"
+                } else {
+                    // Text-only conversation
+                    return@withContext callSathiAI(userMessage)
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Sathi AI with image error", e)
+                return@withContext "💜 मैं आपकी image और message को process करने में थोड़ी परेशानी हो रही है। But I'm here for you - please tell me in words what you wanted to share. 🤗"
+            }
+        }
 
     // Demo responses when API key is not configured and RunAnywhere not ready
     private fun getDemoResponse(module: String, userMessage: String): String {

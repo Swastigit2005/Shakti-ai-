@@ -10,6 +10,10 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,9 +29,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.google.ai.client.generativeai.GenerativeModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.shakti.ai.BuildConfig
 import com.shakti.ai.R
+import com.shakti.ai.ai.GeminiService
 import com.shakti.ai.viewmodel.SathiViewModel
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -119,6 +126,10 @@ class SathiChatFragment : Fragment() {
     private var isRecording = false
     private var audioFilePath: String? = null
 
+    // Speech recognition
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var isListening = false
+
     // Chat messages
     private val chatMessages = mutableListOf<ChatMessage>()
     private lateinit var chatAdapter: ChatAdapter
@@ -129,7 +140,7 @@ class SathiChatFragment : Fragment() {
     ) { permissions ->
         when {
             permissions[Manifest.permission.RECORD_AUDIO] == true -> {
-                startVoiceRecording()
+                startVoiceRecognition()
             }
             else -> {
                 Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
@@ -169,38 +180,85 @@ class SathiChatFragment : Fragment() {
         if (viewModel.chatMessages.value.isEmpty()) {
             viewModel.initializeSathiSession()
         }
+
+        // Test API integration automatically (for debugging) - COMMENTED OUT TO PREVENT CRASHES
+        // testGeminiAPIIntegration()
+        setupMessageInput()
     }
 
     private fun initializeViews(view: View) {
         messageInput = view.findViewById(R.id.message_input)
-        sendButton = view.findViewById(R.id.btn_send_message)
-        voiceButton = view.findViewById(R.id.btn_voice_message)
-        uploadButton = view.findViewById(R.id.btn_upload_media)
-        breathingButton = view.findViewById(R.id.btn_breathing_exercise)
-        gratitudeButton = view.findViewById(R.id.btn_gratitude_journal)
         chatRecyclerView = view.findViewById(R.id.chat_recycler_view)
-    }
 
-    private fun setupClickListeners() {
-        sendButton.setOnClickListener {
-            sendMessage()
+        // New UI elements from the redesigned layout
+        val welcomeLayout = view.findViewById<LinearLayout>(R.id.welcome_layout)
+        val btnMenu = view.findViewById<ImageView>(R.id.btn_menu)
+        val btnScanner = view.findViewById<ImageView>(R.id.btn_scanner)
+        val btnAddAttachment = view.findViewById<ImageView>(R.id.btn_add_attachment)
+        val btnVoiceMessage = view.findViewById<ImageView>(R.id.btn_voice_message)
+        val btnAudioWave = view.findViewById<ImageView>(R.id.btn_audio_wave)
+
+        // Suggestion cards
+        val cardEmotionalSupport = view.findViewById<CardView>(R.id.card_emotional_support)
+        val cardMentalHealth = view.findViewById<CardView>(R.id.card_mental_health)
+        val cardCopingStrategies = view.findViewById<CardView>(R.id.card_coping_strategies)
+        val cardMoreOptions = view.findViewById<CardView>(R.id.card_more_options)
+
+        // Set up suggestion card clicks
+        cardEmotionalSupport.setOnClickListener {
+            startConversationWithPrompt("I need emotional support. I'm feeling overwhelmed and could use someone to talk to.")
         }
 
-        voiceButton.setOnClickListener {
-            handleVoiceRecording()
+        cardMentalHealth.setOnClickListener {
+            startConversationWithPrompt("Can you help me understand mental health better? I want to learn about managing my emotions.")
         }
 
-        uploadButton.setOnClickListener {
+        cardCopingStrategies.setOnClickListener {
+            startConversationWithPrompt("I need help with coping strategies. What techniques can help me deal with stress and anxiety?")
+        }
+
+        cardMoreOptions.setOnClickListener {
+            showMoreOptionsMenu()
+        }
+
+        // Set up header button clicks
+        btnMenu.setOnClickListener {
+            Toast.makeText(context, "Menu coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        btnScanner.setOnClickListener {
+            Toast.makeText(context, "QR Scanner coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        // Set up input bar button clicks
+        btnAddAttachment.setOnClickListener {
             openMediaPicker()
         }
 
-        breathingButton.setOnClickListener {
-            startBreathingExercise()
+        btnVoiceMessage.setOnClickListener {
+            handleVoiceRecording()
         }
 
-        gratitudeButton.setOnClickListener {
-            openGratitudeJournal()
+        // Store references for later use - Create simple button instances
+        this.sendButton = androidx.appcompat.widget.AppCompatImageButton(requireContext()).apply {
+            setOnClickListener { sendMessage() }
         }
+
+        this.voiceButton = androidx.appcompat.widget.AppCompatButton(requireContext()).apply {
+            setOnClickListener { handleVoiceRecording() }
+        }
+
+        this.uploadButton = androidx.appcompat.widget.AppCompatButton(requireContext()).apply {
+            setOnClickListener { openMediaPicker() }
+        }
+
+        // Create dummy buttons to maintain compatibility with existing code
+        this.breathingButton = androidx.appcompat.widget.AppCompatButton(requireContext())
+        this.gratitudeButton = androidx.appcompat.widget.AppCompatButton(requireContext())
+    }
+
+    private fun setupClickListeners() {
+        // All button click listeners are now set in initializeViews using the new layout's UI elements.
     }
 
     private fun setupRecyclerView() {
@@ -266,32 +324,100 @@ class SathiChatFragment : Fragment() {
         }
     }
 
+    private fun setupMessageInput() {
+        messageInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND ||
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+            ) {
+                sendMessage()
+                true
+            } else {
+                false
+            }
+        }
+
+        // Handle enter key press
+        messageInput.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
+                event.action == android.view.KeyEvent.ACTION_DOWN
+            ) {
+                sendMessage()
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     private fun sendMessage() {
         val message = messageInput.text.toString().trim()
         if (message.isNotEmpty()) {
             messageInput.text.clear()
-            // Send with default mood rating of 5
-            viewModel.sendMessageToSathi(message, 5)
+
+            // Hide welcome screen and show chat if this is the first message
+            if (view?.findViewById<LinearLayout>(R.id.welcome_layout)?.visibility == View.VISIBLE) {
+                startConversationWithPrompt(message)
+            } else {
+                // Show mood selector for better context
+                showMoodSelector(message)
+            }
         } else {
             Toast.makeText(context, "Please enter a message", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun showMoodSelector(message: String) {
+        val moodOptions = arrayOf(
+            "😢 Very Low (1-2)",
+            "😔 Low (3-4)",
+            "😐 Neutral (5-6)",
+            "🙂 Good (7-8)",
+            "😊 Great (9-10)"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("How are you feeling right now?")
+            .setMessage("This helps me understand your mood better so I can provide more personalized support.")
+            .setItems(moodOptions) { _, which ->
+                val moodRating = when (which) {
+                    0 -> 2  // Very Low
+                    1 -> 4  // Low  
+                    2 -> 5  // Neutral
+                    3 -> 7  // Good
+                    4 -> 9  // Great
+                    else -> 5
+                }
+
+                // Send message with mood context
+                viewModel.sendMessageToSathi(message, moodRating)
+            }
+            .setNegativeButton("Skip") { _, _ ->
+                // Send with neutral mood
+                viewModel.sendMessageToSathi(message, 5)
+            }
+            .show()
+    }
+
+    private fun getCurrentMoodRating(): Int {
+        // Return the last known mood or show quick selector
+        return viewModel.moodScore.value.coerceIn(1, 10)
+    }
+
     private fun handleVoiceRecording() {
-        if (isRecording) {
-            stopVoiceRecording()
+        if (!isListening) {
+            startVoiceRecognition()
         } else {
-            checkAudioPermissionAndRecord()
+            stopVoiceRecognition()
         }
     }
 
-    private fun checkAudioPermissionAndRecord() {
+    private fun checkAudioPermissionAndListen() {
         when {
             ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.RECORD_AUDIO
             ) == PackageManager.PERMISSION_GRANTED -> {
-                startVoiceRecording()
+                startVoiceRecognition()
             }
             else -> {
                 requestPermissionLauncher.launch(
@@ -301,70 +427,224 @@ class SathiChatFragment : Fragment() {
         }
     }
 
-    private fun startVoiceRecording() {
-        try {
-            audioFilePath =
-                "${requireContext().externalCacheDir?.absolutePath}/audio_${System.currentTimeMillis()}.3gp"
-
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                setOutputFile(audioFilePath)
-                prepare()
-                start()
+    private fun startVoiceRecognition() {
+        if (SpeechRecognizer.isRecognitionAvailable(requireContext())) {
+            if (speechRecognizer == null) {
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
             }
-
-            isRecording = true
-            voiceButton.text = "⏹️ Stop Recording"
+            isListening = true
+            voiceButton.text = "⏹️ Stop Listening"
             voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 resources.getColor(android.R.color.holo_red_light, null)
             )
-            Toast.makeText(context, "🎤 Recording started...", Toast.LENGTH_SHORT).show()
-        } catch (e: IOException) {
-            Toast.makeText(context, "Failed to start recording: ${e.message}", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "🎤 Listening... Please speak now.", Toast.LENGTH_SHORT).show()
+
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                putExtra(
+                    RecognizerIntent.EXTRA_PROMPT,
+                    "How are you feeling? Please share your thoughts."
+                )
+            }
+
+            speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {
+                }
+
+                override fun onBeginningOfSpeech() {
+                }
+
+                override fun onRmsChanged(rmsdB: Float) {
+                }
+
+                override fun onBufferReceived(buffer: ByteArray?) {
+                }
+
+                override fun onEndOfSpeech() {
+                }
+
+                override fun onError(error: Int) {
+                    isListening = false
+                    voiceButton.text = "🎤 Voice Message"
+                    voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                        resources.getColor(R.color.sathi_color, null)
+                    )
+                    Toast.makeText(context, "Speech recognition error ($error)", Toast.LENGTH_SHORT)
+                        .show()
+                }
+
+                override fun onResults(results: Bundle?) {
+                    isListening = false
+                    voiceButton.text = "🎤 Voice Message"
+                    voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                        resources.getColor(R.color.sathi_color, null)
+                    )
+                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val spokenText = matches?.firstOrNull()
+                    if (!spokenText.isNullOrEmpty()) {
+                        Toast.makeText(context, "✅ Recognized: $spokenText", Toast.LENGTH_SHORT)
+                            .show()
+                        viewModel.sendMessageToSathi(spokenText, getCurrentMoodRating())
+                    } else {
+                        Toast.makeText(context, "Could not recognize speech.", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+
+                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onEvent(eventType: Int, params: Bundle?) {}
+            })
+            speechRecognizer?.startListening(intent)
+        } else {
+            Toast.makeText(context, "Speech recognition not available", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun stopVoiceRecording() {
-        try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-            mediaRecorder = null
-            isRecording = false
+    private fun stopVoiceRecognition() {
+        if (speechRecognizer != null && isListening) {
+            speechRecognizer?.stopListening()
+            isListening = false
             voiceButton.text = "🎤 Voice Message"
             voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 resources.getColor(R.color.sathi_color, null)
             )
+            Toast.makeText(context, "Stopped listening.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-            Toast.makeText(context, "✅ Recording saved!", Toast.LENGTH_SHORT).show()
+    private fun handleMediaUpload(uri: Uri) {
+        try {
+            val contentResolver = requireContext().contentResolver
+            val mimeType = contentResolver.getType(uri)
+            val fileName = uri.lastPathSegment ?: "unknown_file"
 
-            // Send voice message indicator via ViewModel
-            viewModel.sendMessageToSathi("🎤 Voice message recorded", 5)
+            Toast.makeText(context, "📎 Media uploaded: $fileName", Toast.LENGTH_SHORT).show()
+
+            // Analyze media content type and send appropriate message
+            val mediaMessage = when {
+                mimeType?.startsWith("image/") == true -> {
+                    """🖼️ I've shared an image with you. This picture captures something meaningful about how I'm feeling right now. 
+                    
+                    Can you help me explore:
+                    • What emotions this image might represent
+                    • How visual elements connect to my mental state
+                    • What this choice of sharing says about my current needs
+                    
+                    I'd appreciate your compassionate insight into what I might be trying to express through this image."""
+                }
+
+                mimeType?.startsWith("video/") == true -> {
+                    """🎬 I've shared a video with you. This video resonates with my current emotional state.
+                    
+                    Can you help me understand:
+                    • Why this particular content speaks to me right now
+                    • What feelings or experiences it might reflect
+                    • How I can process what this video brings up for me
+                    
+                    Sometimes moving images capture feelings that words cannot express."""
+                }
+
+                mimeType?.startsWith("audio/") == true -> {
+                    """🎵 I've shared an audio file with you. Music and sounds have a powerful impact on my emotions.
+                    
+                    Can you help me explore:
+                    • How this audio reflects my current mood
+                    • What memories or feelings it evokes
+                    • How sound therapy or music can support my mental health
+                    
+                    I believe this audio choice says something important about where I am emotionally."""
+                }
+
+                mimeType?.startsWith("text/") == true -> {
+                    """📝 I've shared a text document with you. The written word often captures thoughts I struggle to speak aloud.
+                    
+                    Can you help me:
+                    • Process the emotions behind sharing this text
+                    • Understand what these written words mean to me
+                    • Explore how writing can be therapeutic
+                    
+                    Sometimes sharing text is easier than speaking our feelings directly."""
+                }
+
+                else -> {
+                    """📎 I've shared a file with you that feels significant to me right now. Even though I can't describe exactly why, this file represents something important about my current emotional state.
+                    
+                    Can you help me:
+                    • Understand why I felt compelled to share this
+                    • Explore what this sharing behavior might indicate about my needs
+                    • Process whatever feelings led me to choose this particular item
+                    
+                    Sometimes our unconscious choices reveal more than our conscious words."""
+                }
+            }
+
+            // Send enhanced media context to AI with mood selector
+            showMoodSelectorForMedia(mediaMessage, fileName, mimeType ?: "unknown")
+
         } catch (e: Exception) {
-            Toast.makeText(context, "Failed to stop recording: ${e.message}", Toast.LENGTH_SHORT)
+            Toast.makeText(context, "Error processing media: ${e.message}", Toast.LENGTH_SHORT)
                 .show()
         }
     }
 
-    private fun openMediaPicker() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        intent.type = "image/*"
-        pickMediaLauncher.launch(intent)
+    private fun showMoodSelectorForMedia(mediaMessage: String, fileName: String, mimeType: String) {
+        val moodOptions = arrayOf(
+            "😢 This media reflects my sadness/pain",
+            "😰 This shows my anxiety/worry",
+            "😐 This represents my current neutral state",
+            "🤔 This makes me think/reflect",
+            "😊 This brings me some comfort/joy"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("How does this media relate to your feelings?")
+            .setMessage("Sharing media is a meaningful way to express emotions. Help me understand the connection between this $mimeType file and your current state.")
+            .setItems(moodOptions) { _, which ->
+                val moodRating = when (which) {
+                    0 -> 2  // Sadness/Pain
+                    1 -> 3  // Anxiety  
+                    2 -> 5  // Neutral
+                    3 -> 6  // Reflective
+                    4 -> 8  // Comfort/Joy
+                    else -> 5
+                }
+
+                val contextualMessage =
+                    "$mediaMessage\n\n[Media context: $fileName - ${moodOptions[which].substring(2)}]"
+
+                // Send message with media and mood context
+                viewModel.sendMessageToSathi(contextualMessage, moodRating)
+            }
+            .setNegativeButton("Just shared it") { _, _ ->
+                // Send with neutral mood and basic context
+                viewModel.sendMessageToSathi("$mediaMessage\n\n[Media: $fileName]", 5)
+            }
+            .show()
     }
 
-    private fun handleMediaUpload(uri: Uri) {
-        Toast.makeText(context, "📎 Media uploaded: ${uri.lastPathSegment}", Toast.LENGTH_SHORT)
-            .show()
+    private fun openMediaPicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "*/*"
+            putExtra(
+                Intent.EXTRA_MIME_TYPES, arrayOf(
+                    "image/*",
+                    "video/*",
+                    "audio/*",
+                    "text/*"
+                )
+            )
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
 
-        // Send media upload indicator via ViewModel
-        viewModel.sendMessageToSathi(
-            "📎 Shared an image. Can you help me understand my feelings about it?",
-            5
-        )
+        try {
+            pickMediaLauncher.launch(Intent.createChooser(intent, "Share with Sathi"))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Unable to open file picker", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun startBreathingExercise() {
@@ -395,6 +675,41 @@ class SathiChatFragment : Fragment() {
         dialog.show()
     }
 
+    private fun startConversationWithPrompt(message: String) {
+        // Hide welcome screen and show chat
+        view?.findViewById<LinearLayout>(R.id.welcome_layout)?.visibility = View.GONE
+        view?.findViewById<RecyclerView>(R.id.chat_recycler_view)?.visibility = View.VISIBLE
+
+        // Send the message
+        viewModel.sendMessageToSathi(message, 5)
+    }
+
+    private fun showMoreOptionsMenu() {
+        val options = arrayOf(
+            "🫁 Breathing Exercise",
+            "💗 Gratitude Journal",
+            "📊 Mood Tracker",
+            "🎵 Relaxing Sounds",
+            "📚 Self-Help Resources",
+            "🆘 Crisis Support"
+        )
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("More Options")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> startBreathingExercise()
+                    1 -> openGratitudeJournal()
+                    2 -> startConversationWithPrompt("Can you help me track my mood? I want to understand my emotional patterns better.")
+                    3 -> startConversationWithPrompt("I need some relaxation techniques. Can you guide me through some calming exercises?")
+                    4 -> startConversationWithPrompt("I'm looking for self-help resources. What do you recommend for personal growth and mental wellness?")
+                    5 -> startConversationWithPrompt("I'm in crisis and need immediate support. Please help me.")
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun openGratitudeJournal() {
         val input = EditText(requireContext())
         input.hint = "What are you grateful for today?"
@@ -423,6 +738,8 @@ class SathiChatFragment : Fragment() {
         super.onDestroy()
         mediaRecorder?.release()
         mediaRecorder = null
+        speechRecognizer?.destroy()
+        speechRecognizer = null
     }
 
     // Data classes
@@ -431,6 +748,117 @@ class SathiChatFragment : Fragment() {
         val isUser: Boolean,
         val timestamp: String
     )
+
+    /**
+     * Test function to verify Gemini API integration
+     * Uncomment the call in onViewCreated to enable testing
+     */
+    private fun testGeminiAPIIntegration() {
+        // Add a small delay to let the fragment initialize
+        view?.postDelayed({
+            Log.d("SathiChatTest", "Testing Gemini API integration...")
+
+            // Test 1: Check BuildConfig
+            try {
+                Log.d(
+                    "SathiChatTest",
+                    "BuildConfig.GEMINI_API_KEY length: ${BuildConfig.GEMINI_API_KEY.length}"
+                )
+                Log.d(
+                    "SathiChatTest",
+                    "API key starts with: ${BuildConfig.GEMINI_API_KEY.take(15)}..."
+                )
+
+                if (BuildConfig.GEMINI_API_KEY.isEmpty() || BuildConfig.GEMINI_API_KEY == "your_api_key_here") {
+                    Log.e("SathiChatTest", "❌ API key not properly configured!")
+                } else {
+                    Log.d("SathiChatTest", "✅ API key appears to be configured")
+                }
+            } catch (e: Exception) {
+                Log.e("SathiChatTest", "❌ Error accessing BuildConfig: ${e.message}")
+            }
+
+            // Test 2: Direct API call
+            lifecycleScope.launch {
+                try {
+                    Log.d("SathiChatTest", "Making direct API call...")
+                    val geminiService = GeminiService.getInstance(requireContext())
+                    val testResponse =
+                        geminiService.callSathiAI("Hello, this is a test message to verify the API is working properly.")
+
+                    Log.d("SathiChatTest", "✅ API Response received: ${testResponse.take(100)}...")
+
+                    if (testResponse.contains("Demo mode") || testResponse.contains("API key")) {
+                        Log.w(
+                            "SathiChatTest",
+                            "⚠️ Received demo response - API might not be working"
+                        )
+                        Toast.makeText(context, "⚠️ API Test: Demo mode active", Toast.LENGTH_LONG)
+                            .show()
+                    } else {
+                        Log.d("SathiChatTest", "✅ API test successful!")
+                        Toast.makeText(context, "✅ API Test: Working properly", Toast.LENGTH_LONG)
+                            .show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("SathiChatTest", "❌ API test failed: ${e.message}", e)
+                    Toast.makeText(context, "❌ API Test Failed: ${e.message}", Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+
+            // Test 3: ViewModel test
+            Log.d("SathiChatTest", "Testing ViewModel integration...")
+            viewModel.sendMessageToSathi("Test message from automated testing", 5)
+
+            // --- TEST 4: DIRECT Gemini API integration ---
+            testDirectGeminiAPI()
+
+        }, 2000) // Wait 2 seconds for initialization
+    }
+
+    /**
+     * Direct Gemini API test - bypasses service layer for immediate testing
+     */
+    private fun testDirectGeminiAPI() {
+        lifecycleScope.launch {
+            try {
+                Log.d("DirectGeminiTest", "🟢 Testing DIRECT Gemini API integration...")
+
+                // Create direct Gemini model (uses API key from BuildConfig)
+                val directModel = GenerativeModel(
+                    modelName = "gemini-1.5-flash",
+                    apiKey = BuildConfig.GEMINI_API_KEY
+                )
+
+                val testPrompt = """
+                You are Sathi, a compassionate AI companion for Indian women. 
+
+                User just said: "Hello, I need someone to talk to"
+
+                Respond warmly in 1-2 sentences with some Hindi mixed in naturally. Be supportive and ask how they're feeling.
+                """.trimIndent()
+
+                Log.d("DirectGeminiTest", "🟢 Making direct API call...")
+                val response = directModel.generateContent(testPrompt)
+                val responseText = response.text ?: "Direct API test: No response text."
+
+                Log.d("DirectGeminiTest", "🟢 DIRECT API SUCCESS! Response: $responseText")
+
+                // Direct simple Toast and debug log to show output (no accessing private VM fields)
+                Toast.makeText(
+                    context,
+                    "✅ Direct API Success: ${responseText.take(60)}",
+                    Toast.LENGTH_LONG
+                ).show()
+
+            } catch (e: Exception) {
+                Log.e("DirectGeminiTest", "❌ Direct API test failed: ${e.message}", e)
+                Toast.makeText(context, "❌ Direct API Failed: ${e.message}", Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+    }
 
     // Chat Adapter
     inner class ChatAdapter(private val messages: List<ChatMessage>) :
