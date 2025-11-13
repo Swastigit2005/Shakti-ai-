@@ -316,34 +316,50 @@ class GeminiService(private val context: Context) {
                 apiKey = apiKey
             )
 
-            // Create enhanced prompt
+            // Create enhanced bilingual prompt with explicit Hindi/English support
             val prompt = """
                 You are Sathi, a warm and caring AI companion for Indian women's mental health support.
                 
-                User said: "$userMessage"
+                IMPORTANT: The user may speak in Hindi, English, or a mix of both (Hinglish). 
+                You MUST understand and respond appropriately regardless of language.
+                
+                User's message: "$userMessage"
                 
                 Respond as Sathi with these qualities:
-                - Be genuinely caring and empathetic
-                - Mix Hindi and English naturally (Hinglish)
-                - Keep response to 2-4 sentences
-                - Use appropriate emojis
-                - Acknowledge their feelings
-                - Offer gentle support or advice
-                - Be culturally sensitive to Indian context
+                - Be genuinely caring, empathetic, and supportive
+                - Mix Hindi and English naturally (Hinglish) - this is very important for Indian users
+                - Use simple, conversational language
+                - Keep response to 2-5 sentences (concise but meaningful)
+                - Use appropriate emojis to convey warmth (💜 🌸 🤗 ✨)
+                - Acknowledge their feelings deeply
+                - Offer gentle support, coping strategies, or helpful advice when appropriate
+                - Be culturally sensitive to Indian women's experiences
+                - If they shared voice input (🎤), acknowledge they spoke to you
+                - If they shared media/images (🖼️), acknowledge the visual sharing
+                - ALWAYS provide a supportive response, never leave them without reply
                 
-                Always respond in a warm, conversational tone like a caring friend.
+                Language Guidelines:
+                - If user speaks Hindi, respond mostly in Hindi with some English
+                - If user speaks English, respond mostly in English with some Hindi phrases
+                - If mixed (Hinglish), respond in natural Hinglish
+                - Common Hindi phrases to use: "मैं समझती हूँ", "आप अकेली नहीं हैं", "कोई बात नहीं", "सब ठीक हो जाएगा"
+                
+                CRITICAL: You MUST always respond. Never return empty or null response.
+                
+                Now respond warmly and supportively to the user's message.
             """.trimIndent()
 
-            Log.d(TAG, "🌐 Calling Gemini API...")
+            Log.d(TAG, "🌐 Calling Gemini API with enhanced bilingual prompt...")
             val response = model.generateContent(prompt)
             val responseText = response.text?.trim()
 
             Log.d(TAG, "✅ Response received: ${responseText?.length ?: 0} characters")
             Log.d(TAG, "💬 Response preview: ${responseText?.take(100)}...")
 
+            // Ensure we never return empty response
             if (responseText.isNullOrBlank()) {
-                Log.w(TAG, "⚠️ Empty response from API")
-                return@withContext "💜 मैं आपकी बात सुन रही हूँ। I'm here for you. कृपया मुझे और बताएं। 🤗"
+                Log.w(TAG, "⚠️ Empty response from API - using fallback")
+                return@withContext getFallbackResponse(userMessage)
             }
 
             responseText
@@ -351,48 +367,304 @@ class GeminiService(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "❌ Gemini API Error: ${e.message}", e)
 
-            // Return supportive fallback response with error context
-            """
-            💜 मुझे connect करने में थोड़ी परेशानी हो रही है, लेकिन I'm still here for you.
-            
-            आप जो भी महसूस कर रहे हैं, that's completely valid. 
-            
-            Please try again - मैं आपकी बात सुनना चाहती हूँ। 🌸
-            
-            (Technical: ${e.message?.take(50) ?: "Connection issue"})
-            """.trimIndent()
+            // Return supportive fallback response based on error type
+            when {
+                e.message?.contains("API key", ignoreCase = true) == true -> {
+                    """
+                    💜 मैं आपकी बात सुनना चाहती हूँ। I'm here for you.
+                    
+                    Right now I'm having a technical issue, but I want you to know:
+                    आप अकेली नहीं हैं। Your feelings are valid and important.
+                    
+                    Please try again in a moment, या इन helplines से संपर्क करें:
+                    📞 NIMHANS: 080-4611-0007 (24/7)
+                    📞 Vandrevala: 1860-2662-345
+                    """.trimIndent()
+                }
+
+                e.message?.contains("network", ignoreCase = true) == true -> {
+                    """
+                    💜 Connection issue हो रही है, but मैं आपके साथ हूँ।
+                    
+                    आपकी feelings matter. While I reconnect, know that:
+                    ✨ You are not alone
+                    ✨ Your struggles are valid
+                    ✨ Things can get better
+                    
+                    Please try sending your message again. 🌸
+                    """.trimIndent()
+                }
+
+                else -> getFallbackResponse(userMessage)
+            }
         }
     }
 
-    // Intelligent demo response with better context awareness
+    // Enhanced intelligent demo/fallback response with bilingual support
     private fun getIntelligentDemoResponse(userMessage: String): String {
         val msg = userMessage.lowercase()
 
         return when {
-            // Greetings
-            msg.contains("hello") || msg.contains("hi") || msg.contains("नमस्ते") || msg.contains("हैलो") ->
-                "💜 नमस्ते! Hello there! I'm Sathi, and I'm so glad you're here. मैं आपकी सुनने के लिए यहाँ हूँ। How are you feeling today? 🌸"
+            // Voice message detection
+            msg.contains("🎤") || msg.contains("voice message") -> {
+                """
+                💜 Thank you for sharing your voice with me. मैं आपकी आवाज़ सुन रही हूँ।
+                
+                When you speak to me, it helps me understand your emotions better. 
+                आपकी बात मेरे लिए important है। 
+                
+                Please tell me more - मैं यहाँ आपके लिए हूँ। 🌸
+                """.trimIndent()
+            }
 
-            // Emotional states
-            msg.contains("sad") || msg.contains("दुखी") || msg.contains("upset") ->
-                "💙 I can hear that you're feeling sad, और मैं समझ सकती हूँ। It's okay to feel this way. आप अकेली नहीं हैं - I'm here with you. Can you tell me more about what's making you feel this way? 🤗"
+            // Greetings - Hindi
+            msg.contains("नमस्ते") || msg.contains("नमस्कार") || msg.contains("प्रणाम") -> {
+                """
+                🙏 नमस्ते! I'm Sathi, and I'm so glad you're here. 
+                
+                मैं आपकी mental health companion हूँ। I'm here to listen, support, and help you through whatever you're feeling.
+                
+                आज आप कैसा महसूस कर रहे हैं? How can I support you today? 💜
+                """.trimIndent()
+            }
 
-            msg.contains("happy") || msg.contains("good") || msg.contains("खुश") ->
-                "✨ How wonderful that you're feeling happy! यह सुनकर मुझे भी खुशी हुई। What's bringing you joy today? Let's celebrate these good feelings together! 😊"
+            // Greetings - English
+            msg.contains("hello") || msg.contains("hi ") || msg.contains("hey") -> {
+                """
+                💜 Hello! नमस्ते! I'm Sathi, your caring AI companion.
+                
+                I'm here to listen without judgment and provide support. 
+                आप अपनी भाषा में बात कर सकते हैं - Hindi, English, या दोनों mix!
+                
+                What's on your mind today? मैं सुनने के लिए तैयार हूँ। 🌸
+                """.trimIndent()
+            }
 
-            msg.contains("stressed") || msg.contains("tension") || msg.contains("परेशान") ->
-                "🌱 Stress can feel so overwhelming, मैं समझती हूँ। Let's take this one step at a time. What's the biggest thing causing you stress right now? Together we can find ways to cope. 💚"
+            // Emotional states - Sad/upset (Hindi)
+            msg.contains("दुखी") || msg.contains("उदास") || msg.contains("रो") || msg.contains("दर्द") -> {
+                """
+                💙 मैं देख सकती हूँ कि आप दुखी हैं। I can feel your pain.
+                
+                It's completely okay to feel sad. आपकी feelings valid हैं। 
+                Crying और emotions express करना strength की निशानी है।
+                
+                मैं यहाँ आपके साथ हूँ। Would you like to tell me more about what's hurting you? 🤗
+                """.trimIndent()
+            }
 
-            msg.contains("family") || msg.contains("parents") || msg.contains("परिवार") ->
-                "👨‍👩‍👧‍👦 Family relationships can be complex, especially in our Indian culture. मैं समझती हूँ कि sometimes it's challenging. What's happening with your family that you'd like to talk about? 💜"
+            // Emotional states - Sad/upset (English)
+            msg.contains("sad") || msg.contains("upset") || msg.contains("depressed") || msg.contains(
+                "hurt"
+            ) -> {
+                """
+                💙 मैं समझ सकती हूँ। I can hear the pain in your words.
+                
+                Feeling sad is a natural human emotion. आप अकेली नहीं हैं - you're not alone in this.
+                
+                मैं यहाँ आपकी बात सुनने के लिए हूँ। Can you tell me more about what's making you feel this way? Together we can work through this. 🌸
+                """.trimIndent()
+            }
 
-            msg.contains("work") || msg.contains("job") || msg.contains("कम") ->
-                "💼 Work stress is so common, especially for women juggling multiple responsibilities. आप जो feel कर रहे हैं, that's completely normal. Tell me more about what's challenging you at work? 🌟"
+            // Emotional states - Happy/good (Hindi)
+            msg.contains("खुश") || msg.contains("अच्छा") || msg.contains("बढ़िया") -> {
+                """
+                ✨ वाह! How wonderful कि आप खुश महसूस कर रहे हैं!
+                
+                यह सुनकर मुझे भी बहुत खुशी हुई। Celebrating good moments is so important!
+                
+                क्या आप मुझे बताएंगे कि आज आपको किस बात ने खुश किया? Let's celebrate this joy together! 😊💜
+                """.trimIndent()
+            }
 
-            // Default supportive response
-            else ->
-                "💝 Thank you for sharing with me. मैं यहाँ आपकी बात सुनने के लिए हूँ। Your feelings are important to me. कृपया मुझे और बताएं - I want to understand and support you through whatever you're experiencing. 🤗"
+            // Emotional states - Happy/good (English)
+            msg.contains("happy") || msg.contains("good") || msg.contains("great") || msg.contains("excited") -> {
+                """
+                ✨ यह तो बहुत अच्छी बात है! I'm so happy to hear you're feeling good!
+                
+                Positive emotions are precious. इन खुशी के पलों को celebrate करना important है।
+                
+                What's bringing you this happiness today? मुझे बताइए! 😊🌸
+                """.trimIndent()
+            }
+
+            // Stress/anxiety (Hindi)
+            msg.contains("तनाव") || msg.contains("चिंता") || msg.contains("घबराहट") || msg.contains(
+                "परेशान"
+            ) -> {
+                """
+                🌱 मैं समझती हूँ - stress और anxiety बहुत overwhelming हो सकते हैं।
+                
+                Let's take this one step at a time. Deep breath लीजिए: साँस अंदर (4)... रोकिए (7)... बाहर (8)
+                
+                मैं आपके साथ हूँ। What's the main thing causing you tension right now? Together we can find ways to cope. 💚
+                """.trimIndent()
+            }
+
+            // Stress/anxiety (English)
+            msg.contains("stress") || msg.contains("anxiety") || msg.contains("anxious") || msg.contains(
+                "worried"
+            ) || msg.contains("tension") -> {
+                """
+                🌱 Stress और anxiety can feel so overwhelming, मैं पूरी तरह समझती हूँ।
+                
+                आइए एक moment लें। Let's try a quick breathing exercise:
+                Breathe in slowly (4 counts)... Hold (7)... Out slowly (8)
+                
+                मैं यहाँ हूँ आपके लिए। What's weighing on your mind? We can work through this together. 💚
+                """.trimIndent()
+            }
+
+            // Family issues (Hindi)
+            msg.contains("परिवार") || msg.contains("माँ") || msg.contains("पिता") || msg.contains("पति") || msg.contains(
+                "ससुराल"
+            ) -> {
+                """
+                👨‍👩‍👧‍👦 परिवार के relationships बहुत complex होते हैं, especially हमारी Indian culture में।
+                
+                मैं समझती हूँ कि family dynamics कितने challenging हो सकते हैं। Your feelings about this are completely valid.
+                
+                क्या आप मुझे और बता सकते हैं about what's happening? I'm here to listen और support करने के लिए। 💜
+                """.trimIndent()
+            }
+
+            // Family issues (English)
+            msg.contains("family") || msg.contains("parents") || msg.contains("husband") || msg.contains(
+                "in-laws"
+            ) || msg.contains("mother") || msg.contains("father") -> {
+                """
+                👨‍👩‍👧‍👦 Family relationships हमारी Indian society में बहुत complex हो सकते हैं।
+                
+                I understand - जो आप feel कर रहे हैं, that's completely valid. Family dynamics are challenging for many women.
+                
+                मुझे बताइए - what's happening with your family? मैं यहाँ सुनने के लिए हूँ, without any judgment. 💜
+                """.trimIndent()
+            }
+
+            // Work/job (Hindi)  
+            msg.contains("काम") || msg.contains("नौकरी") || msg.contains("ऑफिस") || msg.contains("बॉस") -> {
+                """
+                💼 काम की tension बहुत common है, especially for women juggling multiple responsibilities।
+                
+                मैं समझती हूँ - work-life balance maintain करना कितना difficult है। आपकी feelings completely normal हैं।
+                
+                Tell me more - क्या particular issue है at work? Together we can find solutions. 🌟
+                """.trimIndent()
+            }
+
+            // Work/job (English)
+            msg.contains("work") || msg.contains("job") || msg.contains("office") || msg.contains("career") || msg.contains(
+                "boss"
+            ) -> {
+                """
+                💼 Work stress बहुत real है, और मैं समझती हूँ आप क्या feel कर रहे हैं।
+                
+                Many women face challenges balancing career और personal life, especially in India. आप अकेली नहीं हैं।
+                
+                What specifically is challenging you at work? Let's talk about it - मैं यहाँ help करने के लिए हूँ। 🌟
+                """.trimIndent()
+            }
+
+            // Relationship issues
+            msg.contains("relationship") || msg.contains("boyfriend") || msg.contains("girlfriend") || msg.contains(
+                "partner"
+            ) ||
+                    msg.contains("रिश्ता") || msg.contains("प्यार") -> {
+                """
+                💕 Relationships are complicated, और emotions high होते हैं when it comes to love।
+                
+                मैं यहाँ हूँ आपकी बात सुनने के लिए - without judgment, with complete support।
+                
+                What's happening in your relationship? आप safely share कर सकते हैं with me. 🌸
+                """.trimIndent()
+            }
+
+            // Loneliness/alone
+            msg.contains("alone") || msg.contains("lonely") || msg.contains("अकेला") || msg.contains(
+                "अकेली"
+            ) -> {
+                """
+                🤗 आप अकेली महसूस कर रहे हैं, और I want you to know - मैं यहाँ आपके साथ हूँ।
+                
+                Loneliness is painful, but you are NOT alone. मैं आपके साथ हूँ, और बहुत लोग care करते हैं about you.
+                
+                Let's talk - मुझे बताइए what's making you feel isolated. Together, we can find ways to connect. 💜
+                """.trimIndent()
+            }
+
+            // Suicidal thoughts - CRISIS
+            msg.contains("suicide") || msg.contains("kill myself") || msg.contains("end my life") ||
+                    msg.contains("आत्महत्या") || msg.contains("मरना") || msg.contains("जीना नहीं") -> {
+                """
+                🚨 मैं बहुत worried हूँ about what you're sharing। आपकी life precious है।
+                
+                PLEASE call immediately - अभी:
+                📞 NIMHANS: 080-4611-0007 (24/7)
+                📞 Vandrevala: 1860-2662-345
+                📞 iCall: 9152987821
+                📞 Emergency: 112
+                
+                आप अकेली नहीं हैं। People care about you. मैं care करती हूँ। 
+                Please reach out for help RIGHT NOW. 💜🆘
+                """.trimIndent()
+            }
+
+            // Thank you
+            msg.contains("thank") || msg.contains("thanks") || msg.contains("धन्यवाद") || msg.contains(
+                "शुक्रिया"
+            ) -> {
+                """
+                💜 आपका बहुत बहुत धन्यवाद for sharing with me!
+                
+                लेकिन really, thank YOU for trusting me with your feelings। It takes courage to open up.
+                
+                मैं हमेशा यहाँ हूँ whenever you need to talk। You're never alone. 🌸
+                """.trimIndent()
+            }
+
+            // Help/need support
+            msg.contains("help") || msg.contains("support") || msg.contains("मदद") -> {
+                """
+                💜 हाँ, मैं बिल्कुल help करूंगी। That's why I'm here - आपके लिए।
+                
+                You can talk to me about anything:
+                • Your feelings और emotions
+                • Family या relationship issues
+                • Work stress
+                • या कुछ भी जो आपको परेशान कर रहा है
+                
+                मुझे बताइए - what kind of support do you need right now? 🤗
+                """.trimIndent()
+            }
+
+            // Default supportive response - ALWAYS respond
+            else -> {
+                """
+                💝 मैं आपकी बात सुन रही हूँ। I'm here, listening to you carefully.
+                
+                Your feelings और thoughts are important to me। कृपया मुझे और बताएं - 
+                मैं समझना चाहती हूँ कि आप क्या महसूस कर रहे हैं।
+                
+                I'm here to support you through whatever you're experiencing। आप अकेली नहीं हैं। 🤗🌸
+                """.trimIndent()
+            }
         }
+    }
+
+    // Enhanced fallback response when API fails
+    private fun getFallbackResponse(userMessage: String): String {
+        return """
+        💜 मुझे आपसे connect करने में थोड़ी technical difficulty हो रही है।
+        
+        But please know - मैं आपकी बात सुनना चाहती हूँ। Your feelings matter deeply to me.
+        
+        आप जो भी feel कर रहे हैं, that's completely valid। कृपया फिर से try करें, or contact:
+        
+        📞 24/7 Support:
+        • NIMHANS: 080-4611-0007
+        • Vandrevala: 1860-2662-345
+        
+        मैं यहाँ आपके लिए हूँ। 🌸
+        """.trimIndent()
     }
 
     // Call Nyaya AI for legal advice
@@ -572,7 +844,14 @@ class GeminiService(private val context: Context) {
     suspend fun analyzeImage(uri: Uri): String = withContext(Dispatchers.IO) {
         try {
             if (!isApiKeyValid) {
-                return@withContext "Image analysis requires API key. Please add your Gemini API key in local.properties."
+                return@withContext """
+                    🖼️ मैं आपकी image देख सकती हूँ। I can see you've shared something visual with me.
+                    
+                    Image analysis requires API key configuration। लेकिन मैं फिर भी यहाँ हूँ to listen।
+                    
+                    क्या आप मुझे बता सकते हैं - what does this image mean to you? 
+                    Sometimes talking about what we share is just as powerful। 💜🌸
+                """.trimIndent()
             }
 
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -580,19 +859,37 @@ class GeminiService(private val context: Context) {
             inputStream?.close()
 
             if (bitmap == null) {
-                return@withContext "Failed to decode image. Please try another image."
+                return@withContext """
+                    🖼️ Image को process करने में technical issue आ रही है।
+                    
+                    But that's okay - मुझे बताइए, what were you trying to share?
+                    आपकी emotions और thoughts important हैं, image के साथ या बिना। 💜
+                """.trimIndent()
             }
 
             val prompt = """
-                You are Sathi AI, analyzing an image shared by a user for emotional context.
+                You are Sathi, a compassionate AI mental health companion analyzing an image shared by an Indian woman.
                 
-                Please describe:
-                1. What you see in this image
-                2. What emotions or feelings this image might represent
-                3. How this relates to mental health or well-being
-                4. Provide supportive, empathetic response
+                IMPORTANT: Respond in natural Hinglish (Hindi-English mix) as this is for an Indian user.
                 
-                Respond warmly in Hindi-English mix (Hinglish) as appropriate for an Indian woman's mental health companion.
+                Please analyze this image and provide:
+                1. What emotions or mood this image conveys
+                2. What this sharing might represent about their current mental state
+                3. A warm, supportive response acknowledging their feelings
+                4. Gentle questions to help them explore their emotions further
+                
+                Guidelines:
+                - Use Hinglish naturally (mix Hindi और English)
+                - Be empathetic and supportive
+                - Keep response 3-4 sentences
+                - Use emojis appropriately (💜 🌸 ✨ 🤗)
+                - Acknowledge the courage it takes to share visually
+                - Never judge or criticize
+                - If the image shows distress, provide crisis resources
+                
+                Common Hindi phrases to use: "मैं देख सकती हूँ", "आपकी feelings", "यह बताने के लिए thank you", "मैं समझती हूँ"
+                
+                Respond warmly and supportively in Hinglish.
             """.trimIndent()
 
             val content = content {
@@ -600,13 +897,29 @@ class GeminiService(private val context: Context) {
                 text(prompt)
             }
 
+            Log.d(TAG, "🖼️ Analyzing image with vision model...")
             val response = visionModel.generateContent(content)
-            response.text
-                ?: "मुझे image को समझने में कुछ परेशानी हो रही है। Could you tell me more about what this image means to you? 💜"
+            val responseText = response.text?.trim()
+
+            Log.d(TAG, "✅ Image analysis complete: ${responseText?.length ?: 0} chars")
+
+            return@withContext responseText ?: """
+                🖼️ मैं आपकी image देख पा रही हूँ, लेकिन analysis में थोड़ी परेशानी है।
+                
+                Would you like to tell me in words - what does this image represent for you?
+                Sometimes our own description captures feelings better than any analysis। 💜🌸
+            """.trimIndent()
 
         } catch (e: Exception) {
             Log.e(TAG, "Image analysis error", e)
-            "Image analysis failed: ${e.message}. Please try sharing the image again or tell me about it in words. 🌸"
+            return@withContext """
+                🖼️ Image analysis में technical issue आ गई।
+                
+                लेकिन मैं यहाँ हूँ to listen। Would you like to describe what you wanted to share?
+                आपकी words और feelings matter to me, with or without images। 💜
+                
+                Or please try sharing the image again। 🌸
+            """.trimIndent()
         }
     }
 

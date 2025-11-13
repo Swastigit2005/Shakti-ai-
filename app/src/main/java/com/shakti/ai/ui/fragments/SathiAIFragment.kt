@@ -437,25 +437,35 @@ class SathiChatFragment : Fragment() {
             voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 resources.getColor(android.R.color.holo_red_light, null)
             )
-            Toast.makeText(context, "🎤 Listening... Please speak now.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "🎤 बोलिए... Listening in Hindi & English", Toast.LENGTH_SHORT).show()
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(
                     RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                     RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                 )
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                // Support both Hindi and English
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "hi-IN")
+                // Add English as fallback
+                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
+                putExtra(RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES, arrayOf("hi-IN", "en-IN", "en-US"))
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                 putExtra(
                     RecognizerIntent.EXTRA_PROMPT,
-                    "How are you feeling? Please share your thoughts."
+                    "अपनी बात बताएं। Share your feelings in Hindi or English."
                 )
             }
 
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
+                    Log.d("VoiceInput", "✅ Ready for speech - Hindi & English supported")
                 }
 
                 override fun onBeginningOfSpeech() {
+                    Log.d("VoiceInput", "🎤 User started speaking")
+                    Toast.makeText(context, "🎧 सुन रहे हैं... Listening...", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onRmsChanged(rmsdB: Float) {
@@ -465,6 +475,7 @@ class SathiChatFragment : Fragment() {
                 }
 
                 override fun onEndOfSpeech() {
+                    Log.d("VoiceInput", "🎤 User finished speaking")
                 }
 
                 override fun onError(error: Int) {
@@ -473,8 +484,22 @@ class SathiChatFragment : Fragment() {
                     voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                         resources.getColor(R.color.sathi_color, null)
                     )
-                    Toast.makeText(context, "Speech recognition error ($error)", Toast.LENGTH_SHORT)
-                        .show()
+                    
+                    val errorMessage = when (error) {
+                        SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                        SpeechRecognizer.ERROR_CLIENT -> "Client error"
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission needed"
+                        SpeechRecognizer.ERROR_NETWORK -> "Network error"
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
+                        SpeechRecognizer.ERROR_NO_MATCH -> "No speech detected. Please try again."
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Speech recognizer busy"
+                        SpeechRecognizer.ERROR_SERVER -> "Server error"
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
+                        else -> "Speech recognition error"
+                    }
+                    
+                    Log.e("VoiceInput", "❌ Speech recognition error: $errorMessage (code: $error)")
+                    Toast.makeText(context, "⚠️ $errorMessage", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onResults(results: Bundle?) {
@@ -483,24 +508,53 @@ class SathiChatFragment : Fragment() {
                     voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                         resources.getColor(R.color.sathi_color, null)
                     )
+                    
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val spokenText = matches?.firstOrNull()
+                    
+                    Log.d("VoiceInput", "📝 Speech results: ${matches?.joinToString(", ")}")
+                    
                     if (!spokenText.isNullOrEmpty()) {
-                        Toast.makeText(context, "✅ Recognized: $spokenText", Toast.LENGTH_SHORT)
-                            .show()
-                        viewModel.sendMessageToSathi(spokenText, getCurrentMoodRating())
+                        Log.d("VoiceInput", "✅ Recognized speech: $spokenText")
+                        Toast.makeText(context, "✅ समझा: $spokenText", Toast.LENGTH_SHORT).show()
+                        
+                        // Send voice message with context
+                        val voiceMessage = "🎤 Voice Message: $spokenText"
+                        
+                        // Hide welcome screen if visible
+                        if (view?.findViewById<LinearLayout>(R.id.welcome_layout)?.visibility == View.VISIBLE) {
+                            startConversationWithPrompt(spokenText)
+                        } else {
+                            viewModel.sendMessageToSathi(spokenText, getCurrentMoodRating())
+                        }
                     } else {
-                        Toast.makeText(context, "Could not recognize speech.", Toast.LENGTH_SHORT)
-                            .show()
+                        Log.w("VoiceInput", "⚠️ Empty speech result")
+                        Toast.makeText(context, "कुछ सुनाई नहीं दिया। Please speak again.", Toast.LENGTH_SHORT).show()
                     }
                 }
 
-                override fun onPartialResults(partialResults: Bundle?) {}
-                override fun onEvent(eventType: Int, params: Bundle?) {}
+                override fun onPartialResults(partialResults: Bundle?) {
+                    val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    Log.d("VoiceInput", "📝 Partial results: ${partial?.firstOrNull()}")
+                }
+                
+                override fun onEvent(eventType: Int, params: Bundle?) {
+                    Log.d("VoiceInput", "📡 Speech event: $eventType")
+                }
             })
-            speechRecognizer?.startListening(intent)
+            
+            try {
+                speechRecognizer?.startListening(intent)
+                Log.d("VoiceInput", "🎤 Speech recognition started")
+            } catch (e: Exception) {
+                Log.e("VoiceInput", "❌ Failed to start speech recognition: ${e.message}", e)
+                Toast.makeText(context, "Failed to start voice input: ${e.message}", Toast.LENGTH_SHORT).show()
+                isListening = false
+                voiceButton.text = "🎤 Voice Message"
+            }
         } else {
-            Toast.makeText(context, "Speech recognition not available", Toast.LENGTH_SHORT).show()
+            Log.e("VoiceInput", "❌ Speech recognition not available on this device")
+            Toast.makeText(context, "Voice input not available on this device", Toast.LENGTH_SHORT).show()
         }
     }
 
