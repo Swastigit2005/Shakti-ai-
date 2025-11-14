@@ -1,37 +1,48 @@
 package com.shakti.ai.ui.fragments
 
+import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.shakti.ai.R
-import com.shakti.ai.models.HealthCategory
+import com.shakti.ai.models.*
+import com.shakti.ai.ui.adapters.CalendarDayAdapter
+import com.shakti.ai.ui.adapters.DailyInsightAdapter
 import com.shakti.ai.viewmodel.SwasthyaViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class SwasthyaAIFragment : Fragment() {
 
     private val viewModel: SwasthyaViewModel by activityViewModels()
 
     // UI Elements
-    private lateinit var btnHeavyBleeding: Button
-    private lateinit var btnMoodSwings: Button
-    private lateinit var btnSevereCramps: Button
-    private lateinit var btnLogPeriodDay: Button
-    private lateinit var btnBookConsultation: Button
-    private lateinit var btnPeriodTracker: Button
-    private lateinit var btnHealthTips: Button
-    private lateinit var btnSymptomChecker: Button
-    private lateinit var cycleInfoText: TextView
+    private lateinit var tvCurrentDate: TextView
+    private lateinit var tvPeriodPrediction: TextView
+    private lateinit var tvDaysCount: TextView
+    private lateinit var tvPregnancyChance: TextView
+    private lateinit var btnLogPeriod: MaterialButton
+    private lateinit var rvWeekCalendar: RecyclerView
+    private lateinit var rvDailyInsights: RecyclerView
+
+    // Adapters
+    private lateinit var calendarAdapter: CalendarDayAdapter
+    private lateinit var insightAdapter: DailyInsightAdapter
+
+    // Data
+    private var currentPeriodData: PeriodCycleData? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,337 +56,411 @@ class SwasthyaAIFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initializeViews(view)
+        setupCalendarRecyclerView()
+        setupInsightsRecyclerView()
         setupClickListeners()
         observeViewModel()
 
-        // Initialize with demo data
-        viewModel.trackMenstrualCycle(
-            lastPeriodDate = LocalDate.now().minusDays(15),
-            cycleLength = 28,
-            periodDuration = 5
-        )
+        // Initialize with sample data
+        initializeSampleData()
     }
 
     private fun initializeViews(view: View) {
-        btnHeavyBleeding = view.findViewById(R.id.btn_heavy_bleeding)
-        btnMoodSwings = view.findViewById(R.id.btn_mood_swings)
-        btnSevereCramps = view.findViewById(R.id.btn_severe_cramps)
-        btnLogPeriodDay = view.findViewById(R.id.btn_log_period_day)
-        btnBookConsultation = view.findViewById(R.id.btn_book_consultation)
+        tvCurrentDate = view.findViewById(R.id.tv_current_date)
+        tvPeriodPrediction = view.findViewById(R.id.tv_period_prediction)
+        tvDaysCount = view.findViewById(R.id.tv_days_count)
+        tvPregnancyChance = view.findViewById(R.id.tv_pregnancy_chance)
+        btnLogPeriod = view.findViewById(R.id.btn_log_period)
+        rvWeekCalendar = view.findViewById(R.id.rv_week_calendar)
+        rvDailyInsights = view.findViewById(R.id.rv_daily_insights)
 
-        // Additional buttons
-        btnPeriodTracker = createButton("📅 Period Tracker")
-        btnHealthTips = createButton("💡 Health Tips")
-        btnSymptomChecker = createButton("🔍 Symptom Checker")
+        // Set current date
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("MMMM d")
+        tvCurrentDate.text = today.format(formatter)
 
-        // Create cycle info text view
-        cycleInfoText = TextView(requireContext())
+        // Close refer card
+        view.findViewById<View>(R.id.btn_close_refer)?.setOnClickListener {
+            view.findViewById<View>(R.id.card_refer)?.visibility = View.GONE
+        }
+
+        // Calendar full view
+        view.findViewById<View>(R.id.btn_calendar_view)?.setOnClickListener {
+            showFullCalendarDialog()
+        }
     }
 
-    private fun createButton(text: String): Button {
-        return Button(requireContext()).apply {
-            this.text = text
+    private fun setupCalendarRecyclerView() {
+        calendarAdapter = CalendarDayAdapter(emptyList()) { day ->
+            onDayClicked(day)
+        }
+        rvWeekCalendar.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = calendarAdapter
+        }
+    }
+
+    private fun setupInsightsRecyclerView() {
+        insightAdapter = DailyInsightAdapter(emptyList()) { insight ->
+            onInsightClicked(insight)
+        }
+        rvDailyInsights.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = insightAdapter
         }
     }
 
     private fun setupClickListeners() {
-        btnHeavyBleeding.setOnClickListener {
-            logSymptom("Heavy Bleeding - soaking through pad/tampon every 1-2 hours")
+        btnLogPeriod.setOnClickListener {
+            showLogPeriodDialog()
         }
 
-        btnMoodSwings.setOnClickListener {
-            logSymptom("Mood Swings - sudden emotional changes, irritability, or sadness")
-        }
-
-        btnSevereCramps.setOnClickListener {
-            logSymptom("Severe Cramps - intense pelvic pain, difficulty in daily activities")
-        }
-
-        btnLogPeriodDay.setOnClickListener {
-            logPeriodDay()
-        }
-
-        btnBookConsultation.setOnClickListener {
-            bookConsultation()
-        }
-
-        btnPeriodTracker.setOnClickListener {
-            showPeriodTrackerDialog()
-        }
-
-        btnHealthTips.setOnClickListener {
-            showHealthTips()
-        }
-
-        btnSymptomChecker.setOnClickListener {
-            showSymptomCheckerDialog()
+        tvPregnancyChance.setOnClickListener {
+            showPregnancyInfoDialog()
         }
     }
 
     private fun observeViewModel() {
-        // Observe cycle tracking
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.cycleTracking.collect { tracking ->
                 tracking?.let {
-                    val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
-                    val info = """
-                        Next Period: ${it.nextPeriod.format(dateFormatter)}
-                        Current Phase: ${it.currentPhase.name}
-                        Ovulation Date: ${it.ovulationDate.format(dateFormatter)}
-                        Days Until Next Period: ${it.daysUntilNextPeriod}
-                        
-                        Health Tips for ${it.currentPhase.name} Phase:
-                        ${it.healthTips.joinToString("\n") { tip -> "• $tip" }}
-                    """.trimIndent()
-
-                    cycleInfoText.text = info
-                }
-            }
-        }
-
-        // Observe symptom analysis
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.symptomAnalysis.collect { analysis ->
-                analysis?.let {
-                    showSymptomAnalysisDialog(
-                        it.symptoms,
-                        it.aiAdvice,
-                        it.urgencyLevel.name,
-                        it.emergencyWarning,
-                        it.whenToSeeDoctor,
-                        it.homeRemedies
-                    )
-                }
-            }
-        }
-
-        // Observe wellness tips
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.wellnessTips.collect { tips ->
-                if (tips.isNotEmpty()) {
-                    // Tips are displayed when user requests them
-                }
-            }
-        }
-
-        // Observe loading state
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.isLoading.collect { isLoading ->
-                btnHeavyBleeding.isEnabled = !isLoading
-                btnMoodSwings.isEnabled = !isLoading
-                btnSevereCramps.isEnabled = !isLoading
-                btnLogPeriodDay.isEnabled = !isLoading
-                btnSymptomChecker.isEnabled = !isLoading
-            }
-        }
-
-        // Observe error messages
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.errorMessage.collect { error ->
-                error?.let {
-                    Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-                    viewModel.clearError()
+                    updatePeriodPrediction(it)
                 }
             }
         }
     }
 
-    private fun logSymptom(symptom: String) {
-        Toast.makeText(context, "Logging symptom...", Toast.LENGTH_SHORT).show()
-        viewModel.checkSymptoms(symptom)
+    private fun initializeSampleData() {
+        // Create sample period data
+        val today = LocalDate.now()
+        val lastPeriod = today.minusDays(16)
+        val nextPeriod = lastPeriod.plusDays(28)
+        val daysUntil = ChronoUnit.DAYS.between(today, nextPeriod).toInt()
+
+        currentPeriodData = PeriodCycleData(
+            cycleDay = 17,
+            cycleLength = 28,
+            periodLength = 5,
+            lastPeriodStart = lastPeriod,
+            nextPeriodPrediction = nextPeriod,
+            daysUntilNextPeriod = daysUntil,
+            currentPhase = CyclePhase.OVULATION,
+            ovulationDate = today,
+            fertileWindowStart = today.minusDays(2),
+            fertileWindowEnd = today.plusDays(1),
+            pregnancyChance = PregnancyChance.HIGH
+        )
+
+        // Update UI with sample data
+        updatePeriodPredictionUI(currentPeriodData!!)
+        
+        // Generate calendar days
+        val calendarDays = generateWeekCalendarDays(today, currentPeriodData!!)
+        calendarAdapter.updateDays(calendarDays)
+
+        // Generate daily insights
+        val insights = generateDailyInsights(currentPeriodData!!)
+        insightAdapter.updateInsights(insights)
     }
 
-    private fun logPeriodDay() {
+    private fun updatePeriodPrediction(tracking: CycleTracking) {
+        val daysUntil = tracking.daysUntilNextPeriod
+
+        tvPeriodPrediction.text = "Period in"
+        tvDaysCount.text = "$daysUntil days"
+
+        // Update pregnancy chance text
+        val phase = tracking.currentPhase
+        when (phase) {
+            CyclePhase.OVULATION -> {
+                tvPregnancyChance.text = "See why pregnancy chances may be high ›"
+            }
+            CyclePhase.FOLLICULAR -> {
+                tvPregnancyChance.text = "Pregnancy chances are lower ›"
+            }
+            else -> {
+                tvPregnancyChance.text = "Lower chance of getting pregnant ⓘ"
+            }
+        }
+    }
+
+    private fun updatePeriodPredictionUI(data: PeriodCycleData) {
+        tvPeriodPrediction.text = "Period in"
+        tvDaysCount.text = "${data.daysUntilNextPeriod} days"
+
+        when (data.pregnancyChance) {
+            PregnancyChance.HIGH -> {
+                tvPregnancyChance.text = "See why pregnancy chances may be high ›"
+            }
+            PregnancyChance.MEDIUM -> {
+                tvPregnancyChance.text = "Pregnancy chances are moderate ›"
+            }
+            else -> {
+                tvPregnancyChance.text = "Lower chance of getting pregnant ⓘ"
+            }
+        }
+    }
+
+    private fun generateWeekCalendarDays(today: LocalDate, data: PeriodCycleData): List<CalendarDay> {
+        val days = mutableListOf<CalendarDay>()
+        val startDate = today.minusDays(3)
+
+        for (i in 0..6) {
+            val date = startDate.plusDays(i.toLong())
+            val isToday = date == today
+            val isPeriodDay = date >= data.lastPeriodStart && 
+                             date < data.lastPeriodStart.plusDays(data.periodLength.toLong())
+            val isPredictedPeriod = date >= data.nextPeriodPrediction && 
+                                   date < data.nextPeriodPrediction.plusDays(data.periodLength.toLong())
+            val isFertileDay = data.fertileWindowStart != null && data.fertileWindowEnd != null &&
+                              date >= data.fertileWindowStart && date <= data.fertileWindowEnd
+
+            days.add(
+                CalendarDay(
+                    date = date,
+                    dayOfMonth = date.dayOfMonth,
+                    dayOfWeek = date.dayOfWeek.name.substring(0, 1),
+                    isToday = isToday,
+                    isPeriodDay = isPeriodDay,
+                    isFertileDay = isFertileDay,
+                    isPredictedPeriod = isPredictedPeriod,
+                    hasSymptoms = false
+                )
+            )
+        }
+
+        return days
+    }
+
+    private fun generateDailyInsights(data: PeriodCycleData): List<DailyInsightCard> {
+        val insights = mutableListOf<DailyInsightCard>()
+
+        // Log Symptoms Card (with plus icon)
+        insights.add(
+            DailyInsightCard(
+                id = "log_symptoms",
+                type = InsightType.LOG_SYMPTOMS,
+                title = "Log your\nsymptoms",
+                description = "",
+                actionText = "+",
+                backgroundColor = "#E8F5FF"
+            )
+        )
+
+        // Pregnancy Chance Card
+        val pregnancyText = when (data.pregnancyChance) {
+            PregnancyChance.HIGH -> "High"
+            PregnancyChance.MEDIUM -> "Medium"
+            PregnancyChance.LOW -> "Low"
+            PregnancyChance.NONE -> "Very Low"
+        }
+        insights.add(
+            DailyInsightCard(
+                id = "pregnancy_chance",
+                type = InsightType.PREGNANCY_CHANCE,
+                title = "Today's\nchance of\npregnancy",
+                description = pregnancyText,
+                actionText = "See update",
+                backgroundColor = "#C5E3F6"
+            )
+        )
+
+        // Cycle Day Card
+        insights.add(
+            DailyInsightCard(
+                id = "cycle_day",
+                type = InsightType.CYCLE_DAY,
+                title = "Cycle day",
+                description = "${data.cycleDay}",
+                actionText = null,
+                backgroundColor = "#E6D7FF"
+            )
+        )
+
+        // Symptom Forecast Card
+        insights.add(
+            DailyInsightCard(
+                id = "symptom_forecast",
+                type = InsightType.SYMPTOM_FORECAST,
+                title = "${LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM d"))}:\nSymptoms to\nexpect",
+                description = "",
+                actionText = "Show forecast",
+                backgroundColor = "#B2DFDB"
+            )
+        )
+
+        return insights
+    }
+
+    private fun onDayClicked(day: CalendarDay) {
+        // Show day details and allow symptom logging
+        showDayDetailsDialog(day)
+    }
+
+    private fun onInsightClicked(insight: DailyInsightCard) {
+        when (insight.type) {
+            InsightType.LOG_SYMPTOMS -> showSymptomLoggerDialog()
+            InsightType.PREGNANCY_CHANCE -> showPregnancyInfoDialog()
+            InsightType.CYCLE_DAY -> showCycleDayInfo()
+            InsightType.SYMPTOM_FORECAST -> showSymptomForecast()
+            else -> {
+                Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showSymptomLoggerDialog() {
+        // TODO: Implement symptom selection UI with custom dialog
+        Toast.makeText(
+            context,
+            "📝 Symptom Logger\n\nClick + icon to add today's symptoms:\n• Cramps\n• Mood swings\n• Headache\n• Bloating\nand more...",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    private fun showLogPeriodDialog() {
         android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Log Period Day")
-            .setMessage("Mark today as day 1 of your period?")
+            .setTitle("Log Period")
+            .setMessage("Mark today as the first day of your period?")
             .setPositiveButton("Yes") { _, _ ->
+                val today = LocalDate.now()
                 viewModel.trackMenstrualCycle(
-                    lastPeriodDate = LocalDate.now(),
+                    lastPeriodDate = today,
                     cycleLength = 28,
                     periodDuration = 5
                 )
-                Toast.makeText(context, "Period day logged!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "✓ Period logged successfully!", Toast.LENGTH_SHORT).show()
+                
+                // Refresh data
+                initializeSampleData()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun showPeriodTrackerDialog() {
-        val view = layoutInflater.inflate(
-            android.R.layout.simple_list_item_1,
-            null
-        ) as android.widget.LinearLayout
-        view.orientation = android.widget.LinearLayout.VERTICAL
-        view.setPadding(50, 20, 50, 20)
-
-        val lastPeriodInput = EditText(requireContext()).apply {
-            hint = "Days since last period (e.g., 15)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        }
-        val cycleLengthInput = EditText(requireContext()).apply {
-            hint = "Cycle length (usually 28 days)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText("28")
-        }
-        val periodDurationInput = EditText(requireContext()).apply {
-            hint = "Period duration (usually 5 days)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText("5")
-        }
-
-        view.addView(lastPeriodInput)
-        view.addView(cycleLengthInput)
-        view.addView(periodDurationInput)
-
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Update Period Tracker")
-            .setMessage("Enter your cycle details:")
-            .setView(view)
-            .setPositiveButton("Track") { _, _ ->
-                val daysSince = lastPeriodInput.text.toString().toIntOrNull() ?: 15
-                val cycleLength = cycleLengthInput.text.toString().toIntOrNull() ?: 28
-                val duration = periodDurationInput.text.toString().toIntOrNull() ?: 5
-
-                val lastPeriod = LocalDate.now().minusDays(daysSince.toLong())
-                viewModel.trackMenstrualCycle(lastPeriod, cycleLength, duration)
-
-                Toast.makeText(context, "Cycle tracker updated!", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun showHealthTips() {
-        viewModel.getWellnessTips(HealthCategory.PHYSICAL_FITNESS)
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            val tips = viewModel.wellnessTips.value
-
-            val tipsText = if (tips.isNotEmpty()) {
-                tips.joinToString("\n\n") { " $it" }
-            } else {
+    private fun showPregnancyInfoDialog() {
+        val message = when (currentPeriodData?.currentPhase) {
+            CyclePhase.OVULATION -> {
                 """
-                General Health Tips for Women:
+                🔮 High Pregnancy Chance
                 
-                Exercise regularly (30 min/day)
-                Eat balanced diet with iron & calcium
-                Drink 8 glasses of water daily
-                Get 7-8 hours of sleep
-                Practice stress management
-                Regular health checkups
-                Avoid smoking and excessive alcohol
-                Track menstrual cycle
+                You're currently in your ovulation phase (day ${currentPeriodData?.cycleDay}), which means:
                 
-                Stay healthy, stay strong!
-            """.trimIndent()
+                • Peak fertility window
+                • Ovulation likely today or within 24 hours
+                • Highest chance of conception
+                • Body temperature may be slightly higher
+                • Increased cervical mucus
+                
+                If you're trying to conceive, this is the optimal time!
+                If you're preventing pregnancy, use protection.
+                """.trimIndent()
             }
-
-            android.app.AlertDialog.Builder(requireContext())
-                .setTitle("Health & Wellness Tips")
-                .setMessage(tipsText)
-                .setPositiveButton("OK", null)
-                .show()
-        }
-    }
-
-    private fun showSymptomCheckerDialog() {
-        val input = EditText(requireContext()).apply {
-            hint = "Describe your symptoms..."
-            minLines = 3
-            setPadding(50, 40, 50, 40)
+            CyclePhase.FOLLICULAR -> {
+                """
+                📊 Lower Pregnancy Chance
+                
+                You're in the follicular phase (day ${currentPeriodData?.cycleDay}):
+                
+                • Lower fertility
+                • Body preparing for ovulation
+                • Pregnancy still possible but less likely
+                """.trimIndent()
+            }
+            else -> {
+                """
+                📊 Pregnancy Chances
+                
+                Currently on day ${currentPeriodData?.cycleDay} of your cycle.
+                
+                Your pregnancy chance varies throughout your cycle:
+                • Highest during ovulation (days 12-16)
+                • Lower during menstruation and late luteal phase
+                """.trimIndent()
+            }
         }
 
         android.app.AlertDialog.Builder(requireContext())
-            .setTitle("AI Symptom Checker")
-            .setMessage("Describe what you're experiencing:")
-            .setView(input)
-            .setPositiveButton("Analyze") { _, _ ->
-                val symptoms = input.text.toString()
-                if (symptoms.isNotBlank()) {
-                    viewModel.checkSymptoms(symptoms)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun bookConsultation() {
-        val doctors = arrayOf(
-            "Dr. Priya Sharma - Gynecologist (10+ years)\n 4.9 • ₹299",
-            "Dr. Anjali Mehta - Gynecologist (8+ years)\n 4.8 • ₹249",
-            "Dr. Kavita Singh - Obstetrics (12+ years)\n 5.0 • ₹349",
-            "Dr. Rekha Gupta - Women's Health (15+ years)\n 4.9 • ₹399"
-        )
-
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Book Telemedicine Consultation")
-            .setMessage("Connect with female doctors via video call.\n\n100% Private & Confidential")
-            .setItems(doctors) { _, which ->
-                val doctor = doctors[which].split("-")[0].trim()
-                Toast.makeText(
-                    context,
-                    "Consultation booked with $doctor\nNext slot: Today, 6:00 PM",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun showSymptomAnalysisDialog(
-        symptoms: String,
-        advice: String,
-        urgency: String,
-        emergency: Boolean,
-        whenToSeeDoctor: String,
-        homeRemedies: List<String>
-    ) {
-        val urgencyIcon = when (urgency) {
-            "LOW" -> ""
-            "MEDIUM" -> ""
-            "HIGH" -> ""
-            "EMERGENCY" -> ""
-            else -> ""
-        }
-
-        val title =
-            if (emergency) " EMERGENCY - Seek Immediate Help" else "$urgencyIcon Health Advice"
-
-        val remediesText = if (homeRemedies.isNotEmpty()) {
-            "\n\n Home Remedies:\n${homeRemedies.joinToString("\n") { " $it" }}"
-        } else ""
-
-        val message = """
-            Symptoms: $symptoms
-            
-            Urgency Level: $urgency
-            
-            AI Advice:
-            $advice
-            
-            When to See Doctor:
-            $whenToSeeDoctor
-            $remediesText
-            
-            ${if (emergency) "\n PLEASE SEEK IMMEDIATE MEDICAL ATTENTION!" else ""}
-        """.trimIndent()
-
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle(title)
+            .setTitle("Pregnancy Information")
             .setMessage(message)
-            .setPositiveButton(if (emergency) "Call Emergency" else "Book Doctor") { _, _ ->
-                if (emergency) {
-                    // Call emergency number
-                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                        data = android.net.Uri.parse("tel:112")
-                    }
-                    startActivity(intent)
-                } else {
-                    bookConsultation()
-                }
+            .setPositiveButton("Got it", null)
+            .show()
+    }
+
+    private fun showDayDetailsDialog(day: CalendarDay) {
+        val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
+        val dateStr = day.date.format(formatter)
+        
+        val status = when {
+            day.isPeriodDay -> "🩸 Period Day"
+            day.isPredictedPeriod -> "📅 Predicted Period"
+            day.isFertileDay -> "💚 Fertile Window"
+            day.isToday -> "📍 Today"
+            else -> "Regular Day"
+        }
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle(dateStr)
+            .setMessage("$status\n\nWould you like to log symptoms for this day?")
+            .setPositiveButton("Log Symptoms") { _, _ ->
+                showSymptomLoggerDialog()
             }
             .setNegativeButton("Close", null)
             .show()
+    }
+
+    private fun showCycleDayInfo() {
+        val data = currentPeriodData ?: return
+        
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Cycle Day ${data.cycleDay}")
+            .setMessage(
+                """
+                Current Phase: ${data.currentPhase.name}
+                
+                Your cycle breakdown:
+                • Menstruation: Days 1-${data.periodLength}
+                • Follicular: Days ${data.periodLength + 1}-13
+                • Ovulation: Days 14-16
+                • Luteal: Days 17-${data.cycleLength}
+                
+                Next Period: ${data.nextPeriodPrediction.format(DateTimeFormatter.ofPattern("MMMM d"))}
+                """.trimIndent()
+            )
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showSymptomForecast() {
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("MMMM d")
+        
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("AI Symptom Forecast")
+            .setMessage(
+                """
+                Based on your cycle patterns, you may experience:
+                
+                🌡️ ${today.format(formatter)}:
+                • Increased energy
+                • Clear skin
+                • Heightened libido
+                
+                📅 ${today.plusDays(7).format(formatter)} - ${today.plusDays(10).format(formatter)}:
+                • Possible PMS symptoms
+                • Mood changes
+                • Breast tenderness
+                • Bloating
+                
+                💡 AI Tip: Track your symptoms daily for more accurate predictions!
+                """.trimIndent()
+            )
+            .setPositiveButton("Got it", null)
+            .show()
+    }
+
+    private fun showFullCalendarDialog() {
+        // TODO: Implement full month calendar view
+        Toast.makeText(context, "Full Calendar View - Coming Soon", Toast.LENGTH_SHORT).show()
     }
 }
