@@ -1,314 +1,687 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="#F5F7FA">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp">
 
+            <!-- Header Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Raksha AI"
+                        android:textSize="14sp"
+                        android:textColor="#8896AB"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Safety Shield"
+                        android:textSize="32sp"
+                        android:textColor="#1F2937"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_settings"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_settings"
+                        app:tint="#1F2937"
+                        tools:ignore="ContentDescription" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Alert Notification Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_alert_notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                android:backgroundTint="#FFFFFF"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_shield_check"
+                            android:padding="8dp"
+                            android:background="@drawable/circle_background_blue"
+                            tools:ignore="ContentDescription" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Safety Status"
+                                android:textSize="14sp"
+                                android:textColor="#6B7280"
+                                android:fontFamily="sans-serif-medium" />
+
+                            <TextView
+                                android:id="@+id/tv_alert_time"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="All systems active"
+                                android:textSize="12sp"
+                                android:textColor="#9CA3AF" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_alert_message"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Your safety network is monitoring. Evidence recording is secure and encrypted."
+                        android:textSize="16sp"
+                        android:textColor="#1F2937"
+                        android:lineSpacingExtra="4dp"
+                        android:fontFamily="sans-serif" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Nearby Guardians Mesh Network Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_nearby_guardians"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                android:backgroundTint="#FFFFFF"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_mesh_network"
+                            android:padding="10dp"
+                            android:background="@drawable/circle_background_purple"
+                            tools:ignore="ContentDescription" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Nearby Guardians"
+                                android:textSize="18sp"
+                                android:textColor="#1F2937"
+                                android:fontFamily="sans-serif-medium"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_nearby_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Scanning for nearby users..."
+                                android:textSize="13sp"
+                                android:textColor="#6B7280"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_guardian_count_badge"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#8B5CF6"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:background="@drawable/circle_background_purple"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Shakti users within 500m range using mesh network. They will be notified if you trigger emergency."
+                        android:textSize="14sp"
+                        android:textColor="#6B7280"
+                        android:lineSpacingExtra="2dp"
+                        android:layout_marginBottom="16dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_view_guardians"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:text="View Guardians"
+                            android:textSize="14sp"
+                            android:textColor="#8B5CF6"
+                            android:backgroundTint="#F3E8FF"
+                            app:cornerRadius="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            app:elevation="0dp"
+                            android:layout_marginEnd="8dp"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_alert_guardians"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:text="Alert All"
+                            android:textSize="14sp"
+                            android:textColor="#FFFFFF"
+                            android:backgroundTint="#8B5CF6"
+                            app:cornerRadius="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            app:elevation="0dp"
+                            android:layout_marginStart="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Quick Actions Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="RAKSHA - Escape Support"
-                android:textSize="28sp"
+                android:text="Safety Tools"
+                android:textSize="22sp"
+                android:textColor="#1F2937"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Hidden App • Evidence Recording • Blockchain Proof • Safe House Network • Escape Planning"
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary"
-                android:gravity="center"
-                android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="16dp" />
 
-            <!-- Hidden App Mode -->
-            <androidx.cardview.widget.CardView
+            <!-- Evidence Recording Row -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
 
-                <LinearLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_audio_recording"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_mic"
+                            app:tint="#EF4444"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Audio\nRecord"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_video_recording"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_videocam"
+                            app:tint="#10B981"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Video\nRecord"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Evidence Archive and Emergency Contacts Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_evidence_archive"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_folder"
+                            app:tint="#F59E0B"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Evidence\nArchive"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_emergency_contacts"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_phone"
+                            app:tint="#3B82F6"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Emergency\nContacts"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Support Network Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Support Network"
+                android:textSize="22sp"
+                android:textColor="#1F2937"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Safe House and Escape Plan Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_safe_house"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_home"
+                            app:tint="#8B5CF6"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Safe\nHouse"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_escape_plan"
+                    android:layout_width="0dp"
+                    android:layout_height="110dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    android:backgroundTint="#FFFFFF"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/ic_map"
+                            app:tint="#EC4899"
+                            android:layout_marginBottom="8dp"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Escape\nPlan"
+                            android:textSize="13sp"
+                            android:textColor="#1F2937"
+                            android:gravity="center"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Legal Aid Section -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                android:backgroundTint="#FFFFFF"
+                app:strokeWidth="0dp">
+
+            <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📱 Hidden App Mode - Pattern Access"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="App appears as 'Calculator' on home screen. Access with secret pattern: (1→3) volume buttons"
-                        android:textSize="12sp"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginBottom="16dp" />
-
-                    <Button
-                        android:id="@+id/btn_reveal_app"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="👁️ Reveal App"
-                        android:backgroundTint="@color/raksha_color"
-                        android:textColor="@color/white"
-                        android:layout_marginBottom="8dp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚠️ Emergency Quick Access\nShake phone 3 times rapidly - App transforms back to calculator if someone approaches"
-                        android:textSize="11sp"
-                        android:textColor="@color/warning"
-                        android:padding="8dp"
-                        android:background="#FFF3E0" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/ic_gavel"
+                            app:tint="#059669"
+                            tools:ignore="ContentDescription" />
 
-            <!-- Evidence Recording -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Legal Aid"
+                            android:textSize="18sp"
+                            android:textColor="#1F2937"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:layout_marginStart="12dp" />
+                    </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📹 Court-Admissible Evidence Recording"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="4dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Automatic recording with blockchain verification • Cannot be tampered"
-                        android:textSize="12sp"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginBottom="16dp" />
-
-                    <Button
-                        android:id="@+id/btn_start_audio_recording"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="🎙️ Start Audio Recording"
-                        android:backgroundTint="@color/text_primary"
-                        android:textColor="@color/white"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_start_video_recording"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="📹 Start Video Recording"
-                        android:backgroundTint="@color/text_primary"
-                        android:textColor="@color/white"
-                        android:layout_marginBottom="16dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="What Gets Recorded:"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="✅ Audio of abuse (conversations, threats)\n✅ Video evidence\n✅ Location data (GPS coordinates)\n✅ Blockchain timestamp (proves when it happened)\n✅ AES-256 encrypted storage\n✅ Photos of injuries/damage"
-                        android:textSize="12sp"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="16dp" />
-
-                    <Button
-                        android:id="@+id/btn_view_evidence_archive"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="📁 View Evidence Archive (3 incidents)"
-                        android:backgroundTint="@color/raksha_color"
-                        android:textColor="@color/white" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Blockchain Evidence -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Why Blockchain Makes Evidence Court-Admissible"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="12dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="1️⃣ Immutable Timestamp\nBlockchain creates cryptographic proof of WHEN evidence was created. Cannot be edited or backdated."
-                        android:textSize="12sp"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2️⃣ Tamper-Proof Hash\nEach file gets unique digital fingerprint. Any editing changes the hash, proving tampering."
-                        android:textSize="12sp"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="3️⃣ Legal Recognition\nIndian Evidence Act Section 65B recognizes blockchain evidence as digital signature."
-                        android:textSize="12sp"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="4️⃣ Distributed Storage\nEvidence exists on multiple nodes. Abuser can't destroy all copies even if phone taken."
-                        android:textSize="12sp"
-                        android:textColor="@color/text_primary" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Support Network -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🏠 Support Network"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="16dp" />
-
-                    <Button
-                        android:id="@+id/btn_find_safe_house"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Find Safe House Near Me"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_emergency_contacts"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Emergency Contacts"
-                        android:layout_marginBottom="8dp" />
-
-                    <Button
-                        android:id="@+id/btn_escape_plan"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Create Escape Plan"
-                        android:backgroundTint="@color/raksha_color"
-                        android:textColor="@color/white" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Legal Aid -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚖️ Legal Aid"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="16dp" />
-
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_generate_fir"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Generate FIR (Domestic Violence)"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_height="54dp"
+                        android:text="Generate FIR"
+                        android:textSize="15sp"
+                        android:textColor="#1F2937"
+                        android:backgroundTint="#F3F4F6"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_description"
+                        app:iconTint="#059669"
+                        android:fontFamily="sans-serif-medium"
+                        app:elevation="0dp"
+                        android:layout_marginBottom="10dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_protection_order"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Apply for Protection Order"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_height="54dp"
+                        android:text="Protection Order"
+                        android:textSize="15sp"
+                        android:textColor="#1F2937"
+                        android:backgroundTint="#F3F4F6"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_shield"
+                        app:iconTint="#059669"
+                        android:fontFamily="sans-serif-medium"
+                        app:elevation="0dp"
+                        android:layout_marginBottom="10dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_free_lawyer"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Connect with Free Lawyer" />
+                        android:layout_height="54dp"
+                        android:text="Connect with Free Lawyer"
+                        android:textSize="15sp"
+                        android:textColor="#1F2937"
+                        android:backgroundTint="#F3F4F6"
+                        app:cornerRadius="12dp"
+                        app:icon="@drawable/ic_person"
+                        app:iconTint="#059669"
+                        android:fontFamily="sans-serif-medium"
+                        app:elevation="0dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Blockchain Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                android:backgroundTint="#EFF6FF"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_lock"
+                            app:tint="#3B82F6"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Blockchain Protected"
+                            android:textSize="16sp"
+                            android:textColor="#1F2937"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:layout_marginStart="10dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="All evidence is encrypted with AES-256 and timestamped on blockchain for court admissibility. Evidence cannot be tampered with or deleted."
+                        android:textSize="14sp"
+                        android:textColor="#4B5563"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_sos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Quick SOS"
+        app:tint="#FFFFFF"
+        app:backgroundTint="#06B6D4"
+        app:elevation="6dp"
+        app:fabSize="normal" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

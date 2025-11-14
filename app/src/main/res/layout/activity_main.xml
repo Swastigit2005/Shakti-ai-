@@ -49,17 +49,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Floating Action Button for SOS -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <!-- Emergency SOS Floating Action Button (Prominent, Center-Bottom) -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fab_sos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:src="@android:drawable/ic_dialog_alert"
+        android:layout_marginBottom="24dp"
+        android:text="🚨 EMERGENCY SOS"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
         android:contentDescription="@string/emergency_sos"
-        app:backgroundTint="@color/error"
-        app:tint="@color/white"
+        app:backgroundTint="#FF1744"
+        app:icon="@drawable/ic_sos"
+        app:iconTint="@color/white"
+        app:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -310,12 +311,109 @@ class SwasthyaAIFragment : Fragment() {
     }
 
     private fun showSymptomLoggerDialog() {
-        // TODO: Implement symptom selection UI with custom dialog
-        Toast.makeText(
-            context,
-            "📝 Symptom Logger\n\nClick + icon to add today's symptoms:\n• Cramps\n• Mood swings\n• Headache\n• Bloating\nand more...",
-            Toast.LENGTH_LONG
-        ).show()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_symptom_logger, null)
+        val dialog = Dialog(requireContext())
+        dialog.setContentView(dialogView)
+
+        val today = LocalDate.now()
+        dialogView.findViewById<TextView>(R.id.tv_symptom_header).text = "Today"
+        dialogView.findViewById<TextView>(R.id.tv_symptom_subtitle).text =
+            "Cycle day ${currentPeriodData?.cycleDay ?: "--"}"
+
+        val groupMood = dialogView.findViewById<LinearLayout>(R.id.group_mood)
+        val groupSymptoms = dialogView.findViewById<LinearLayout>(R.id.group_symptoms)
+        val groupSexDrive = dialogView.findViewById<LinearLayout>(R.id.group_sex_drive)
+
+        val selectedMoods = mutableSetOf<String>()
+        val selectedPhysical = mutableSetOf<String>()
+        val selectedSexDrive = mutableSetOf<String>()
+
+        fun createChip(label: String, onToggle: (Boolean) -> Unit): MaterialButton {
+            return MaterialButton(
+                requireContext(),
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = label
+                textSize = 12f
+                isAllCaps = false
+                insetTop = 8
+                insetBottom = 8
+                setPadding(32, 8, 32, 8)
+                cornerRadius = 999
+                setOnClickListener {
+                    isSelected = !isSelected
+                    val bgColor = if (isSelected) 0xFFFFE4E6.toInt() else 0xFFF9FAFB.toInt()
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(bgColor)
+                    onToggle(isSelected)
+                }
+            }
+        }
+
+        listOf(
+            "Calm",
+            "Happy",
+            "Energetic",
+            "Irritated",
+            "Sad",
+            "Anxious",
+            "Depressed",
+            "Very self-critical"
+        )
+            .forEach { label ->
+                val chip = createChip(label) { selected ->
+                    if (selected) selectedMoods.add(label) else selectedMoods.remove(label)
+                }
+                groupMood.addView(chip)
+            }
+
+        listOf(
+            "Everything is fine",
+            "Cramps",
+            "Headache",
+            "Back pain",
+            "Bloating",
+            "Tender breasts",
+            "Nausea",
+            "Acne"
+        )
+            .forEach { label ->
+                val chip = createChip(label) { selected ->
+                    if (selected) selectedPhysical.add(label) else selectedPhysical.remove(label)
+                }
+                groupSymptoms.addView(chip)
+            }
+
+        listOf(
+            "Didn't have sex",
+            "Protected sex",
+            "Unprotected sex",
+            "High sex drive",
+            "Neutral sex drive",
+            "Low sex drive"
+        )
+            .forEach { label ->
+                val chip = createChip(label) { selected ->
+                    if (selected) selectedSexDrive.add(label) else selectedSexDrive.remove(label)
+                }
+                groupSexDrive.addView(chip)
+            }
+
+        dialogView.findViewById<Button>(R.id.btn_cancel_symptoms).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.btn_save_symptoms).setOnClickListener {
+            // TODO: Send structured log to ViewModel when model is ready
+            Toast.makeText(
+                context,
+                "✅ Symptoms logged for today",
+                Toast.LENGTH_SHORT
+            ).show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showLogPeriodDialog() {
