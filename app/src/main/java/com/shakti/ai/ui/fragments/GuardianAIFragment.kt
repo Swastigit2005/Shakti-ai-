@@ -31,9 +31,9 @@ import java.util.*
 
 /**
  * GuardianAIFragment - Physical Safety Module with Three Tabs
- * 1. Mesh Network
- * 2. Evidence System  
- * 3. Emergency Actions
+ * 1. Emergency Actions
+ * 2. Mesh Network
+ * 3. Evidence System
  */
 class GuardianAIFragment : Fragment() {
 
@@ -67,31 +67,224 @@ class GuardianAIFragment : Fragment() {
         // Connect TabLayout with ViewPager2
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
-                0 -> "📡 Mesh Network"
-                1 -> "📹 Evidence"
-                2 -> "🚨 Emergency"
+                0 -> "🚨 Emergency"
+                1 -> "📡 Mesh Network"
+                2 -> "📹 Evidence"
                 else -> ""
             }
         }.attach()
     }
 
-    // ViewPager2 Adapter for the three tabs
+    // ViewPager2 Adapter for the three tabs - REORDERED: Emergency First!
     private inner class GuardianPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
         override fun getItemCount(): Int = 3
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-                0 -> MeshNetworkFragment()
-                1 -> EvidenceSystemFragment()
-                2 -> EmergencyActionsFragment()
-                else -> MeshNetworkFragment()
+                0 -> EmergencyActionsFragment()  // EMERGENCY FIRST - Most Critical
+                1 -> MeshNetworkFragment()       // Mesh Network Second
+                2 -> EvidenceSystemFragment()    // Evidence Third
+                else -> EmergencyActionsFragment()
             }
         }
     }
 }
 
 /**
- * Tab 1: Mesh Network (BLE-based guardian network)
+ * Tab 1: Emergency Actions (SOS and emergency protocols)
+ */
+class EmergencyActionsFragment : Fragment() {
+
+    private val viewModel: GuardianViewModel by activityViewModels()
+
+    private lateinit var sosButton: Button
+    private lateinit var policeButton: Button
+    private lateinit var ambulanceButton: Button
+    private lateinit var emergencyContactsButton: Button
+    private lateinit var shareLocationButton: Button
+    private lateinit var flashlightButton: Button
+    private lateinit var sirenButton: Button
+    private lateinit var cancelButton: Button
+    private lateinit var emergencyStatus: TextView
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_emergency_actions, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        initializeViews(view)
+        setupClickListeners()
+        observeViewModel()
+    }
+
+    private fun initializeViews(view: View) {
+        sosButton = view.findViewById(R.id.btn_sos)
+        policeButton = view.findViewById(R.id.btn_call_police)
+        ambulanceButton = view.findViewById(R.id.btn_call_ambulance)
+        emergencyContactsButton = view.findViewById(R.id.btn_notify_contacts)
+        shareLocationButton = view.findViewById(R.id.btn_share_location)
+        flashlightButton = view.findViewById(R.id.btn_flashlight_strobe)
+        sirenButton = view.findViewById(R.id.btn_siren)
+        cancelButton = view.findViewById(R.id.btn_cancel_emergency)
+        emergencyStatus = view.findViewById(R.id.emergency_status)
+
+        cancelButton.isEnabled = false
+    }
+
+    private fun setupClickListeners() {
+        sosButton.setOnClickListener {
+            confirmSOS()
+        }
+
+        policeButton.setOnClickListener {
+            callPolice()
+        }
+
+        ambulanceButton.setOnClickListener {
+            callAmbulance()
+        }
+
+        emergencyContactsButton.setOnClickListener {
+            notifyContacts()
+        }
+
+        shareLocationButton.setOnClickListener {
+            shareLocation()
+        }
+
+        flashlightButton.setOnClickListener {
+            toggleFlashlight()
+        }
+
+        sirenButton.setOnClickListener {
+            playSiren()
+        }
+
+        cancelButton.setOnClickListener {
+            cancelEmergency()
+        }
+    }
+
+    private fun observeViewModel() {
+        // Observe emergency state
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.emergencyActivated.collect { activated ->
+                if (activated) {
+                    emergencyStatus.text = "🚨 EMERGENCY ACTIVE"
+                    emergencyStatus.setTextColor(resources.getColor(R.color.error, null))
+                    sosButton.isEnabled = false
+                    cancelButton.isEnabled = true
+                } else {
+                    emergencyStatus.text = "⚪ Normal Status"
+                    emergencyStatus.setTextColor(resources.getColor(R.color.text_secondary, null))
+                    sosButton.isEnabled = true
+                    cancelButton.isEnabled = false
+                }
+            }
+        }
+
+        // Observe alerts sent
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.alertsSent.collect { count ->
+                if (count > 0) {
+                    Toast.makeText(context, "✅ Alert sent to $count guardians", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+        }
+    }
+
+    private fun confirmSOS() {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("🚨 TRIGGER FULL EMERGENCY SOS?")
+            .setMessage(
+                """
+                This will:
+                • Call emergency services (100/112)
+                • Alert all nearby guardians
+                • Start auto-recording evidence
+                • Activate flashlight strobe
+                • Share your location continuously
+                • Notify emergency contacts via SMS
+                
+                Only use in real emergencies!
+            """.trimIndent()
+            )
+            .setPositiveButton("ACTIVATE SOS") { _, _ ->
+                viewModel.triggerManualSOS()
+                Toast.makeText(context, "🚨 EMERGENCY SOS ACTIVATED", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun callPolice() {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:100")
+        }
+        startActivity(intent)
+    }
+
+    private fun callAmbulance() {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:108")
+        }
+        startActivity(intent)
+    }
+
+    private fun notifyContacts() {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("📱 Notify Emergency Contacts")
+            .setMessage("Send SMS to all emergency contacts with your location?")
+            .setPositiveButton("Send") { _, _ ->
+                Toast.makeText(context, "Sending SMS to emergency contacts...", Toast.LENGTH_SHORT)
+                    .show()
+                // ViewModel handles notification
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun shareLocation() {
+        val message = "I need help! My current location: [GPS coordinates]"
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, message)
+            putExtra(Intent.EXTRA_SUBJECT, "Emergency Location Share")
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share Location"))
+    }
+
+    private fun toggleFlashlight() {
+        Toast.makeText(context, "📱 Flashlight strobe activated", Toast.LENGTH_SHORT).show()
+        // ViewModel handles flashlight
+    }
+
+    private fun playSiren() {
+        Toast.makeText(context, "🔊 Siren playing (coming soon)", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun cancelEmergency() {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Cancel Emergency?")
+            .setMessage("Are you safe now? This will stop all emergency protocols.")
+            .setPositiveButton("Yes, I'm Safe") { _, _ ->
+                viewModel.resetEmergencyState()
+                Toast.makeText(context, "Emergency cancelled", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+}
+
+/**
+ * Tab 2: Mesh Network (BLE-based guardian network)
  */
 class MeshNetworkFragment : Fragment() {
 
@@ -348,7 +541,7 @@ class MeshNetworkFragment : Fragment() {
 }
 
 /**
- * Tab 2: Evidence System (Auto-recording and evidence management)
+ * Tab 3: Evidence System (Auto-recording and evidence management)
  */
 class EvidenceSystemFragment : Fragment() {
 
@@ -599,194 +792,5 @@ class EvidenceSystemFragment : Fragment() {
         }
 
         override fun getItemCount() = items.size
-    }
-}
-
-/**
- * Tab 3: Emergency Actions (SOS and emergency protocols)
- */
-class EmergencyActionsFragment : Fragment() {
-
-    private val viewModel: GuardianViewModel by activityViewModels()
-    
-    private lateinit var sosButton: Button
-    private lateinit var policeButton: Button
-    private lateinit var ambulanceButton: Button
-    private lateinit var emergencyContactsButton: Button
-    private lateinit var shareLocationButton: Button
-    private lateinit var flashlightButton: Button
-    private lateinit var sirenButton: Button
-    private lateinit var cancelButton: Button
-    private lateinit var emergencyStatus: TextView
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_emergency_actions, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        initializeViews(view)
-        setupClickListeners()
-        observeViewModel()
-    }
-
-    private fun initializeViews(view: View) {
-        sosButton = view.findViewById(R.id.btn_sos)
-        policeButton = view.findViewById(R.id.btn_call_police)
-        ambulanceButton = view.findViewById(R.id.btn_call_ambulance)
-        emergencyContactsButton = view.findViewById(R.id.btn_notify_contacts)
-        shareLocationButton = view.findViewById(R.id.btn_share_location)
-        flashlightButton = view.findViewById(R.id.btn_flashlight_strobe)
-        sirenButton = view.findViewById(R.id.btn_siren)
-        cancelButton = view.findViewById(R.id.btn_cancel_emergency)
-        emergencyStatus = view.findViewById(R.id.emergency_status)
-        
-        cancelButton.isEnabled = false
-    }
-
-    private fun setupClickListeners() {
-        sosButton.setOnClickListener {
-            confirmSOS()
-        }
-
-        policeButton.setOnClickListener {
-            callPolice()
-        }
-
-        ambulanceButton.setOnClickListener {
-            callAmbulance()
-        }
-
-        emergencyContactsButton.setOnClickListener {
-            notifyContacts()
-        }
-
-        shareLocationButton.setOnClickListener {
-            shareLocation()
-        }
-
-        flashlightButton.setOnClickListener {
-            toggleFlashlight()
-        }
-
-        sirenButton.setOnClickListener {
-            playSiren()
-        }
-
-        cancelButton.setOnClickListener {
-            cancelEmergency()
-        }
-    }
-
-    private fun observeViewModel() {
-        // Observe emergency state
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.emergencyActivated.collect { activated ->
-                if (activated) {
-                    emergencyStatus.text = "🚨 EMERGENCY ACTIVE"
-                    emergencyStatus.setTextColor(resources.getColor(R.color.error, null))
-                    sosButton.isEnabled = false
-                    cancelButton.isEnabled = true
-                } else {
-                    emergencyStatus.text = "⚪ Normal Status"
-                    emergencyStatus.setTextColor(resources.getColor(R.color.text_secondary, null))
-                    sosButton.isEnabled = true
-                    cancelButton.isEnabled = false
-                }
-            }
-        }
-
-        // Observe alerts sent
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.alertsSent.collect { count ->
-                if (count > 0) {
-                    Toast.makeText(context, "✅ Alert sent to $count guardians", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun confirmSOS() {
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("🚨 TRIGGER FULL EMERGENCY SOS?")
-            .setMessage("""
-                This will:
-                • Call emergency services (100/112)
-                • Alert all nearby guardians
-                • Start auto-recording evidence
-                • Activate flashlight strobe
-                • Share your location continuously
-                • Notify emergency contacts via SMS
-                
-                Only use in real emergencies!
-            """.trimIndent())
-            .setPositiveButton("ACTIVATE SOS") { _, _ ->
-                viewModel.triggerManualSOS()
-                Toast.makeText(context, "🚨 EMERGENCY SOS ACTIVATED", Toast.LENGTH_LONG).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun callPolice() {
-        val intent = Intent(Intent.ACTION_DIAL).apply {
-            data = Uri.parse("tel:100")
-        }
-        startActivity(intent)
-    }
-
-    private fun callAmbulance() {
-        val intent = Intent(Intent.ACTION_DIAL).apply {
-            data = Uri.parse("tel:108")
-        }
-        startActivity(intent)
-    }
-
-    private fun notifyContacts() {
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("📱 Notify Emergency Contacts")
-            .setMessage("Send SMS to all emergency contacts with your location?")
-            .setPositiveButton("Send") { _, _ ->
-                Toast.makeText(context, "Sending SMS to emergency contacts...", Toast.LENGTH_SHORT).show()
-                // ViewModel handles notification
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun shareLocation() {
-        val message = "I need help! My current location: [GPS coordinates]"
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, message)
-            putExtra(Intent.EXTRA_SUBJECT, "Emergency Location Share")
-        }
-        startActivity(Intent.createChooser(shareIntent, "Share Location"))
-    }
-
-    private fun toggleFlashlight() {
-        Toast.makeText(context, "📱 Flashlight strobe activated", Toast.LENGTH_SHORT).show()
-        // ViewModel handles flashlight
-    }
-
-    private fun playSiren() {
-        Toast.makeText(context, "🔊 Siren playing (coming soon)", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun cancelEmergency() {
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Cancel Emergency?")
-            .setMessage("Are you safe now? This will stop all emergency protocols.")
-            .setPositiveButton("Yes, I'm Safe") { _, _ ->
-                viewModel.resetEmergencyState()
-                Toast.makeText(context, "Emergency cancelled", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("No", null)
-            .show()
     }
 }

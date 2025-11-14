@@ -18,6 +18,8 @@ import com.shakti.ai.ui.fragments.*
  * - Material Design TabLayout
  * - Smooth tab transitions
  * - Fragment state preservation
+ *
+ * Module Order: Suraksha → Raksha → Swasthya → Sathi → Sangam → Nyaya → Dhan Shakti
  */
 class MainActivity : AppCompatActivity() {
 
@@ -32,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         viewPager = findViewById(R.id.view_pager)
         tabLayout = findViewById(R.id.tab_layout)
 
-        // Setup ViewPager2 with adapter for 7 AI modules (Gyaan AI removed from tabs)
+        // Setup ViewPager2 with adapter for 7 AI modules (Gyaan AI accessible via Nyaya AI)
         val adapter = ShaktiPagerAdapter(this)
         viewPager.adapter = adapter
 
@@ -57,13 +59,13 @@ class MainActivity : AppCompatActivity() {
         // Connect TabLayout with ViewPager2
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
-                0 -> "💬 Sathi AI"      // Mental health support
-                1 -> "🛡️ Guardian AI"   // Physical safety
-                2 -> "⚖️ Nyaya AI"      // Legal advisor (includes Education access)
-                3 -> "💰 Dhan Shakti"   // Financial literacy
+                0 -> "🛡️ Suraksha"      // Physical safety (Guardian AI)
+                1 -> "🔒 Raksha"        // DV support
+                2 -> "❤️ Swasthya"     // Health & period tracking
+                3 -> "💬 Sathi"         // Mental health support
                 4 -> "👥 Sangam"        // Community connections
-                5 -> "❤️ Swasthya"     // Health companion
-                6 -> "🔒 Raksha"        // DV support
+                5 -> "⚖️ Nyaya"        // Legal advisor (includes Education access)
+                6 -> "💰 Dhan Shakti"   // Financial literacy
                 // Note: 📚 Gyaan (Education) is now accessible via Nyaya AI
                 else -> "SHAKTI"
             }
@@ -73,13 +75,13 @@ class MainActivity : AppCompatActivity() {
             /*
             tab.setIcon(
                 when (position) {
-                    0 -> R.drawable.ic_mental_health
-                    1 -> R.drawable.ic_shield
-                    2 -> R.drawable.ic_legal
-                    3 -> R.drawable.ic_finance
+                    0 -> R.drawable.ic_shield
+                    1 -> R.drawable.ic_protection
+                    2 -> R.drawable.ic_health
+                    3 -> R.drawable.ic_mental_health
                     4 -> R.drawable.ic_community
-                    5 -> R.drawable.ic_health
-                    6 -> R.drawable.ic_protection
+                    5 -> R.drawable.ic_legal
+                    6 -> R.drawable.ic_finance
                     else -> null
                 }
             )
@@ -111,6 +113,7 @@ class MainActivity : AppCompatActivity() {
 
 /**
  * ShaktiPagerAdapter - Manages fragments for 7 AI modules
+ * Module Order: Suraksha → Raksha → Swasthya → Sathi → Sangam → Nyaya → Dhan Shakti
  * Note: Gyaan AI (Education) is accessible via Nyaya AI's "Go to Education" button
  */
 class ShaktiPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
@@ -119,15 +122,15 @@ class ShaktiPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(act
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> SathiAIFragment()      // Mental health support
-            1 -> GuardianAIFragment()   // Physical safety
-            2 -> NyayaAIFragment()      // Legal advisor (with Education access)
-            3 -> DhanShaktiAIFragment() // Financial literacy
-            4 -> SangamAIFragment()     // Community connections
-            5 -> SwasthyaAIFragment()   // Health companion
-            6 -> RakshaAIFragment()     // DV support
+            0 -> GuardianAIFragment()   // Suraksha - Physical safety
+            1 -> RakshaAIFragment()     // Raksha - DV support
+            2 -> SwasthyaAIFragment()   // Swasthya - Health & period tracking
+            3 -> SathiAIFragment()      // Sathi - Mental health support
+            4 -> SangamAIFragment()     // Sangam - Community connections
+            5 -> NyayaAIFragment()      // Nyaya - Legal advisor (with Education access)
+            6 -> DhanShaktiAIFragment() // Dhan Shakti - Financial literacy
             // Gyaan AI (Education) removed from main tabs - accessible via Nyaya AI
-            else -> SathiAIFragment()   // Default
+            else -> GuardianAIFragment() // Default to first module
         }
     }
 }
