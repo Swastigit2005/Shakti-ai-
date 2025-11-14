@@ -235,8 +235,20 @@ class SathiChatFragment : Fragment() {
             openMediaPicker()
         }
 
+        val btnSendMessage = view.findViewById<ImageView>(R.id.btn_send_message)
+        btnSendMessage.setOnClickListener {
+            sendMessage()
+        }
+
         btnVoiceMessage.setOnClickListener {
-            handleVoiceRecording()
+            // Toggle voice recording when microphone icon clicked
+            if (!isListening) {
+                // Check permission first
+                checkAudioPermissionAndListen()
+            } else {
+                // Stop listening
+                stopVoiceRecognition()
+            }
         }
 
         // Store references for later use - Create simple button instances
@@ -405,8 +417,10 @@ class SathiChatFragment : Fragment() {
 
     private fun handleVoiceRecording() {
         if (!isListening) {
-            startVoiceRecognition()
+            // Start voice recognition with permission check
+            checkAudioPermissionAndListen()
         } else {
+            // Stop voice recognition
             stopVoiceRecognition()
         }
     }
@@ -433,6 +447,11 @@ class SathiChatFragment : Fragment() {
                 speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
             }
             isListening = true
+
+            // Update UI - hide mic icon, show audio wave icon
+            view?.findViewById<ImageView>(R.id.btn_voice_message)?.visibility = View.GONE
+            view?.findViewById<ImageView>(R.id.btn_audio_wave)?.visibility = View.VISIBLE
+
             voiceButton.text = "⏹️ Stop Listening"
             voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 resources.getColor(android.R.color.holo_red_light, null)
@@ -480,6 +499,11 @@ class SathiChatFragment : Fragment() {
 
                 override fun onError(error: Int) {
                     isListening = false
+
+                    // Restore UI - show mic icon, hide audio wave icon
+                    view?.findViewById<ImageView>(R.id.btn_voice_message)?.visibility = View.VISIBLE
+                    view?.findViewById<ImageView>(R.id.btn_audio_wave)?.visibility = View.GONE
+
                     voiceButton.text = "🎤 Voice Message"
                     voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                         resources.getColor(R.color.sathi_color, null)
@@ -504,6 +528,11 @@ class SathiChatFragment : Fragment() {
 
                 override fun onResults(results: Bundle?) {
                     isListening = false
+
+                    // Restore UI - show mic icon, hide audio wave icon
+                    view?.findViewById<ImageView>(R.id.btn_voice_message)?.visibility = View.VISIBLE
+                    view?.findViewById<ImageView>(R.id.btn_audio_wave)?.visibility = View.GONE
+
                     voiceButton.text = "🎤 Voice Message"
                     voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                         resources.getColor(R.color.sathi_color, null)
@@ -551,6 +580,10 @@ class SathiChatFragment : Fragment() {
                 Toast.makeText(context, "Failed to start voice input: ${e.message}", Toast.LENGTH_SHORT).show()
                 isListening = false
                 voiceButton.text = "🎤 Voice Message"
+
+                // Restore UI on error
+                view?.findViewById<ImageView>(R.id.btn_voice_message)?.visibility = View.VISIBLE
+                view?.findViewById<ImageView>(R.id.btn_audio_wave)?.visibility = View.GONE
             }
         } else {
             Log.e("VoiceInput", "❌ Speech recognition not available on this device")
@@ -562,6 +595,11 @@ class SathiChatFragment : Fragment() {
         if (speechRecognizer != null && isListening) {
             speechRecognizer?.stopListening()
             isListening = false
+
+            // Restore UI - show mic icon, hide audio wave icon
+            view?.findViewById<ImageView>(R.id.btn_voice_message)?.visibility = View.VISIBLE
+            view?.findViewById<ImageView>(R.id.btn_audio_wave)?.visibility = View.GONE
+
             voiceButton.text = "🎤 Voice Message"
             voiceButton.backgroundTintList = android.content.res.ColorStateList.valueOf(
                 resources.getColor(R.color.sathi_color, null)

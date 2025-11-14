@@ -323,7 +323,19 @@
                         android:minHeight="40dp"
                         android:maxLines="4"
                         android:inputType="textMultiLine|textCapSentences"
-                        android:scrollbars="vertical" />
+                        android:scrollbars="vertical"
+                        android:imeOptions="actionSend" />
+
+                    <!-- Send Button Icon -->
+                    <ImageView
+                        android:id="@+id/btn_send_message"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_menu_send"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="8dp"
+                        android:contentDescription="Send message"
+                        app:tint="@color/sathi_color" />
 
                     <!-- Voice/Microphone Icon -->
                     <ImageView

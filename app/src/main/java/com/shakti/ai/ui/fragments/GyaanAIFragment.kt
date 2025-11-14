@@ -49,6 +49,7 @@ class GyaanAIFragment : Fragment() {
         initializeViews(view)
         setupClickListeners()
         observeViewModel()
+        setupQuickAccessCards(view)
     }
 
     private fun initializeViews(view: View) {
@@ -887,6 +888,46 @@ class GyaanAIFragment : Fragment() {
                 showOnlineCourses()
             }
             .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun setupQuickAccessCards(view: View) {
+        // Quick Access: Find Scholarships
+        view.findViewById<View>(R.id.quick_card_scholarships)?.setOnClickListener {
+            courseInput.requestFocus()
+            Toast.makeText(context, "Fill in details to find scholarships", Toast.LENGTH_SHORT)
+                .show()
+        }
+
+        // Quick Access: Free Courses
+        view.findViewById<View>(R.id.quick_card_courses)?.setOnClickListener {
+            showOnlineCourses()
+        }
+
+        // Quick Access: Find Mentor
+        view.findViewById<View>(R.id.quick_card_mentor)?.setOnClickListener {
+            connectWithMentor()
+        }
+
+        // Quick Access: Success Stories
+        view.findViewById<View>(R.id.quick_card_stories)?.setOnClickListener {
+            showWomenLeadersStories()
+        }
+
+        // Cross-link to Legal/Nyaya AI
+        view.findViewById<Button>(R.id.btn_goto_legal)?.setOnClickListener {
+            navigateToNyayaAI()
+        }
+    }
+
+    private fun navigateToNyayaAI() {
+        // Navigate to Nyaya AI fragment
+        val nyayaFragment = NyayaAIFragment()
+        parentFragmentManager.beginTransaction()
+            .replace(android.R.id.content, nyayaFragment)
+            .addToBackStack(null)
+            .commit()
+        Toast.makeText(context, "Navigating to Legal Rights & Justice...", Toast.LENGTH_SHORT)
             .show()
     }
 }

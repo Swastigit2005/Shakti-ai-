@@ -14,7 +14,7 @@ import com.shakti.ai.ui.fragments.*
  * MainActivity - Main entry point for ShaktiAI 3.0
  *
  * Features:
- * - ViewPager2 with 8 AI module tabs
+ * - ViewPager2 with 7 AI module tabs (Gyaan AI accessible via Nyaya AI)
  * - Material Design TabLayout
  * - Smooth tab transitions
  * - Fragment state preservation
@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         viewPager = findViewById(R.id.view_pager)
         tabLayout = findViewById(R.id.tab_layout)
 
-        // Setup ViewPager2 with adapter for 8 AI modules
+        // Setup ViewPager2 with adapter for 7 AI modules (Gyaan AI removed from tabs)
         val adapter = ShaktiPagerAdapter(this)
         viewPager.adapter = adapter
 
@@ -59,12 +59,12 @@ class MainActivity : AppCompatActivity() {
             tab.text = when (position) {
                 0 -> "💬 Sathi AI"      // Mental health support
                 1 -> "🛡️ Guardian AI"   // Physical safety
-                2 -> "⚖️ Nyaya AI"      // Legal advisor
+                2 -> "⚖️ Nyaya AI"      // Legal advisor (includes Education access)
                 3 -> "💰 Dhan Shakti"   // Financial literacy
                 4 -> "👥 Sangam"        // Community connections
-                5 -> "📚 Gyaan"         // Education guidance
-                6 -> "❤️ Swasthya"     // Health companion
-                7 -> "🔒 Raksha"        // DV support
+                5 -> "❤️ Swasthya"     // Health companion
+                6 -> "🔒 Raksha"        // DV support
+                // Note: 📚 Gyaan (Education) is now accessible via Nyaya AI
                 else -> "SHAKTI"
             }
 
@@ -78,9 +78,8 @@ class MainActivity : AppCompatActivity() {
                     2 -> R.drawable.ic_legal
                     3 -> R.drawable.ic_finance
                     4 -> R.drawable.ic_community
-                    5 -> R.drawable.ic_education
-                    6 -> R.drawable.ic_health
-                    7 -> R.drawable.ic_protection
+                    5 -> R.drawable.ic_health
+                    6 -> R.drawable.ic_protection
                     else -> null
                 }
             )
@@ -111,22 +110,23 @@ class MainActivity : AppCompatActivity() {
 }
 
 /**
- * ShaktiPagerAdapter - Manages fragments for all 8 AI modules
+ * ShaktiPagerAdapter - Manages fragments for 7 AI modules
+ * Note: Gyaan AI (Education) is accessible via Nyaya AI's "Go to Education" button
  */
 class ShaktiPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
 
-    override fun getItemCount(): Int = 8
+    override fun getItemCount(): Int = 7
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> SathiAIFragment()      // Mental health support
             1 -> GuardianAIFragment()   // Physical safety
-            2 -> NyayaAIFragment()      // Legal advisor
+            2 -> NyayaAIFragment()      // Legal advisor (with Education access)
             3 -> DhanShaktiAIFragment() // Financial literacy
             4 -> SangamAIFragment()     // Community connections
-            5 -> GyaanAIFragment()      // Education guidance
-            6 -> SwasthyaAIFragment()   // Health companion
-            7 -> RakshaAIFragment()     // DV support
+            5 -> SwasthyaAIFragment()   // Health companion
+            6 -> RakshaAIFragment()     // DV support
+            // Gyaan AI (Education) removed from main tabs - accessible via Nyaya AI
             else -> SathiAIFragment()   // Default
         }
     }

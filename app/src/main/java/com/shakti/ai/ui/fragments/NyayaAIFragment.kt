@@ -64,6 +64,10 @@ class NyayaAIFragment : Fragment() {
             setupViewPager()
             Log.d("NyayaAIFragment", "ViewPager setup completed successfully")
 
+            // Setup Quick Access Cards
+            setupQuickAccessCards(view)
+            Log.d("NyayaAIFragment", "Quick access cards setup completed")
+
         } catch (e: Exception) {
             Log.e("NyayaAIFragment", "Error in main fragment setup: ${e.message}", e)
             Toast.makeText(context, "Error setting up Nyaya AI: ${e.message}", Toast.LENGTH_LONG)
@@ -97,6 +101,85 @@ class NyayaAIFragment : Fragment() {
             Log.e("NyayaAIFragment", "Error setting up ViewPager: ${e.message}", e)
             Toast.makeText(context, "Error setting up tabs: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun setupQuickAccessCards(view: View) {
+        // Quick Access: Know Your Rights
+        view.findViewById<View>(R.id.quick_card_rights)?.setOnClickListener {
+            viewPager.currentItem = 1 // Navigate to Know Your Rights tab
+            Toast.makeText(context, "Opening Know Your Rights", Toast.LENGTH_SHORT).show()
+        }
+
+        // Quick Access: Generate FIR
+        view.findViewById<View>(R.id.quick_card_fir)?.setOnClickListener {
+            viewPager.currentItem = 0 // Navigate to FIR Generator tab
+            Toast.makeText(context, "Opening FIR Generator", Toast.LENGTH_SHORT).show()
+        }
+
+        // Quick Access: Free Lawyers
+        view.findViewById<View>(R.id.quick_card_lawyers)?.setOnClickListener {
+            viewPager.currentItem = 3 // Navigate to Free Lawyers tab
+            Toast.makeText(context, "Finding free lawyers near you...", Toast.LENGTH_SHORT).show()
+        }
+
+        // Quick Access: Emergency Helpline
+        view.findViewById<View>(R.id.quick_card_emergency)?.setOnClickListener {
+            showEmergencyHelpline()
+        }
+
+        // Cross-link to Education/Gyaan AI
+        view.findViewById<Button>(R.id.btn_goto_education)?.setOnClickListener {
+            navigateToGyaanAI()
+        }
+    }
+
+    private fun showEmergencyHelpline() {
+        val emergencyNumbers = """
+            🚨 EMERGENCY HELPLINE NUMBERS
+            
+            📞 Women Helpline: 181
+            📞 Police: 100
+            📞 Ambulance: 108
+            📞 National Commission for Women: 7827-170-170
+            
+            📞 Domestic Violence:
+            • 181 (24/7)
+            • WhatsApp: 7217735372
+            
+            📞 NIMHANS Mental Health: 080-4611-0007
+            📞 Vandrevala Foundation: 1860-2662-345
+            
+            ⚠️ Call immediately if you're in danger!
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("🚨 Emergency Helpline")
+            .setMessage(emergencyNumbers)
+            .setPositiveButton("Call 181") { _, _ ->
+                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:181")
+                }
+                startActivity(intent)
+            }
+            .setNeutralButton("Call Police 100") { _, _ ->
+                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:100")
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun navigateToGyaanAI() {
+        // Navigate to Gyaan AI fragment
+        val gyaanFragment = GyaanAIFragment()
+        parentFragmentManager.beginTransaction()
+            .replace(android.R.id.content, gyaanFragment)
+            .addToBackStack(null)
+            .commit()
+        Toast.makeText(context, "Navigating to Education & Scholarships...", Toast.LENGTH_SHORT)
+            .show()
     }
 
     // ViewPager2 Adapter for the four tabs
