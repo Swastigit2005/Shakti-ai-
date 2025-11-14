@@ -101,7 +101,13 @@ class SangamViewModel(application: Application) : AndroidViewModel(application) 
     fun joinCommunity(communityId: String) {
         viewModelScope.launch {
             // In real implementation, would call blockchain smart contract
-            _reputationTokens.value += 10 // Reward for joining
+            earnReputationTokens(10) // Reward for joining
+        }
+    }
+
+    fun earnReputationTokens(amount: Int) {
+        viewModelScope.launch {
+            _reputationTokens.value += amount
         }
     }
 
