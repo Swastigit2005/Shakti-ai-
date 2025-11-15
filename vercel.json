@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "naari-suraksha-download",
+  "builds": [
+    {
+      "src": "api/download.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/api/download"
+    }
+  ]
+}
