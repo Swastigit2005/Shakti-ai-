@@ -932,7 +932,10 @@ class AptosService(private val context: Context) {
     }
 
     /**
-     * Get blockchain statistics
+     * Get blockchain statistics (e.g. network info, transaction stats, etc.)
+     *
+     * Stats are useful for debugging and dashboard display.
+     * In production, this should query the Aptos node for actual stats.
      */
     suspend fun getBlockchainStats(): Result<Map<String, Any>> = withContext(Dispatchers.IO) {
         try {
